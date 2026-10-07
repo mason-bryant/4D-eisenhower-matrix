@@ -9,6 +9,14 @@ import type EisenhowerMatrixPlugin from '../../main.ts';
 import { getDailyNotesFolder } from '../obsidian-adapter/dailyNotes.ts';
 import { showError } from '../obsidian-adapter/toast.ts';
 import { DEFAULT_SETTINGS } from './settings.ts';
+import {
+  PRIORITY_LEVELS,
+  RULE_QUADRANTS,
+  type PriorityLevel,
+  type PriorityOp,
+  type QuadrantRule,
+  type RuleQuadrant,
+} from '../core/quadrantRules.ts';
 import { ConfirmModal } from '../obsidian-adapter/ConfirmModal.ts';
 import { ExcludeFolderModal } from './ExcludeFolderModal.ts';
 import { FolderSuggest } from './FolderSuggest.ts';
@@ -26,6 +34,23 @@ const DAILY_HEADING_DESC =
 
 const EXCLUDED_NAME = 'Excluded folders';
 const EXCLUDED_DESC = 'Tasks from these folders are hidden from the matrix.';
+
+const QUADRANT_MODE_NAME = 'Quadrant assignment';
+const QUADRANT_MODE_DESC =
+  'Tags: a task goes in the quadrant named by its first tag (#DO, #DECIDE, …); anything else is OPEN. Rules: that tag still wins (dragging adds one), and untagged tasks go to the first enabled rule they match, checked DO → DECIDE → DELEGATE → DELETE; no match = OPEN.';
+const QUADRANT_MODE_OPTIONS: Record<string, string> = { tags: 'Tags', rules: 'Rules' };
+const RESET_RULES_NAME = 'Reset quadrant rules';
+const RESET_RULES_DESC = 'Restore the default rules for all four quadrants.';
+const PRIORITY_OP_OPTIONS: Record<PriorityOp, string> = {
+  any: 'Any priority',
+  atLeast: 'At or above',
+  atMost: 'At or below',
+};
+const PRIORITY_LEVEL_LABELS: Record<PriorityLevel, string> = {
+  highest: 'Highest', high: 'High', medium: 'Medium', normal: 'Normal (none)', low: 'Low', lowest: 'Lowest',
+};
+const RULE_DUE_DESC =
+  'Ticked options are OR\'ed; none ticked = any due date. N counts days from today (within = today … today+N).';
 
 const WARN_BLOCKED_NAME = 'Warn when completing a blocked task';
 const WARN_BLOCKED_DESC = 'Ask for confirmation before completing a task with unfinished dependencies.';
@@ -60,7 +85,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
     const coreLabel = coreFolder ? `\`${coreFolder}\`` : '(vault root)';
     const excluded = this.plugin.settings.excludedFolders;
 
-    return [
+    const definitions: SettingDefinitionItem[] = [
       {
         name: DAILY_FOLDER_NAME,
         desc: dailyFolderDesc(coreLabel),
@@ -141,6 +166,136 @@ export class MatrixSettingsTab extends PluginSettingTab {
         },
       },
     ];
+    // Quadrant assignment right after the daily-note settings.
+    definitions.splice(2, 0, ...this.quadrantDefinitions());
+    return definitions;
+  }
+
+  private quadrantDefinitions(): SettingDefinitionItem[] {
+    const isRules = () => this.plugin.settings.quadrantMode === 'rules';
+    const items: SettingDefinitionItem[] = [
+      {
+        name: QUADRANT_MODE_NAME,
+        desc: QUADRANT_MODE_DESC,
+        control: { type: 'dropdown', key: 'quadrantMode', options: QUADRANT_MODE_OPTIONS },
+      },
+    ];
+    for (const q of RULE_QUADRANTS) {
+      items.push({
+        type: 'group',
+        heading: `${q} rule`,
+        visible: isRules,
+        items: [
+          { name: 'Enabled', render: (setting: Setting) => { this.renderRuleEnabled(setting, q); } },
+          { name: 'Priority', render: (setting: Setting) => { this.renderRulePriority(setting, q); } },
+          { name: 'Due date', desc: RULE_DUE_DESC, render: (setting: Setting) => { this.renderRuleDue(setting, q); } },
+        ],
+      });
+    }
+    items.push({
+      name: RESET_RULES_NAME,
+      desc: RESET_RULES_DESC,
+      visible: isRules,
+      render: (setting: Setting) => {
+        setting.addButton((btn) =>
+          btn.setButtonText('Reset rules').onClick(() => {
+            void this.resetQuadrantRules().then(() => this.refreshDefinitions());
+          }),
+        );
+      },
+    });
+    return items;
+  }
+
+  // ==========================================================================
+  // Quadrant rule rows — shared by the declarative and fallback UIs.
+  // ==========================================================================
+
+  private async setQuadrantMode(value: string): Promise<void> {
+    if (value !== 'tags' && value !== 'rules') return;
+    await this.mutate(() => {
+      this.plugin.settings.quadrantMode = value;
+    });
+  }
+
+  private async resetQuadrantRules(): Promise<void> {
+    await this.mutate(() => {
+      this.plugin.settings.quadrantRules = DEFAULT_SETTINGS.quadrantRules;
+    });
+  }
+
+  private rule(q: RuleQuadrant): QuadrantRule {
+    return this.plugin.settings.quadrantRules[q];
+  }
+
+  private async updateRule(q: RuleQuadrant, patch: Partial<QuadrantRule>): Promise<void> {
+    await this.mutate(() => {
+      const rules = this.plugin.settings.quadrantRules;
+      this.plugin.settings.quadrantRules = { ...rules, [q]: { ...rules[q], ...patch } };
+    });
+  }
+
+  private renderRuleEnabled(setting: Setting, q: RuleQuadrant): void {
+    setting.addToggle((toggle) =>
+      toggle.setValue(this.rule(q).enabled).onChange(async (enabled) => {
+        await this.updateRule(q, { enabled });
+      }),
+    );
+  }
+
+  private renderRulePriority(setting: Setting, q: RuleQuadrant): void {
+    let levelDropdown: { setDisabled: (d: boolean) => unknown } | null = null;
+    setting.addDropdown((dropdown) =>
+      dropdown
+        .addOptions(PRIORITY_OP_OPTIONS)
+        .setValue(this.rule(q).priorityOp)
+        .onChange(async (value) => {
+          levelDropdown?.setDisabled(value === 'any');
+          await this.updateRule(q, { priorityOp: value as PriorityOp });
+        }),
+    );
+    setting.addDropdown((dropdown) => {
+      levelDropdown = dropdown;
+      const options = Object.fromEntries(PRIORITY_LEVELS.map((l) => [l, PRIORITY_LEVEL_LABELS[l]]));
+      dropdown
+        .addOptions(options)
+        .setValue(this.rule(q).priority)
+        .setDisabled(this.rule(q).priorityOp === 'any')
+        .onChange(async (value) => {
+          await this.updateRule(q, { priority: value as PriorityLevel });
+        });
+    });
+  }
+
+  private renderRuleDue(setting: Setting, q: RuleQuadrant): void {
+    const buckets = [
+      ['dueOverdue', 'Overdue'],
+      ['dueWithin', 'Within N days'],
+      ['dueBeyond', 'Beyond N days'],
+      ['dueNone', 'No due date'],
+    ] as const;
+    const wrap = setting.controlEl.createDiv({ cls: 'em-rule-due' });
+    for (const [key, label] of buckets) {
+      const labelEl = wrap.createEl('label', { cls: 'em-rule-due-option' });
+      const box = labelEl.createEl('input', { type: 'checkbox' });
+      box.checked = this.rule(q)[key];
+      box.addEventListener('change', () => {
+        void this.updateRule(q, { [key]: box.checked });
+      });
+      labelEl.appendText(label);
+    }
+    const nLabel = wrap.createEl('label', { cls: 'em-rule-due-option', text: 'N =' });
+    const n = nLabel.createEl('input', { type: 'number', cls: 'em-rule-due-days' });
+    n.min = '0';
+    n.value = String(this.rule(q).dueDays);
+    n.addEventListener('change', () => {
+      const days = Math.floor(Number(n.value));
+      if (!Number.isFinite(days) || days < 0) {
+        n.value = String(this.rule(q).dueDays);
+        return;
+      }
+      void this.updateRule(q, { dueDays: days });
+    });
   }
 
   /**
@@ -159,6 +314,8 @@ export class MatrixSettingsTab extends PluginSettingTab {
         return this.plugin.settings.dailyFolderOverride;
       case 'dailySectionHeading':
         return this.plugin.settings.dailySectionHeading;
+      case 'quadrantMode':
+        return this.plugin.settings.quadrantMode;
       case 'warnWhenCompletingBlockedTask':
         return this.plugin.settings.warnWhenCompletingBlockedTask;
       case 'respectTaskDependenciesWhenSorting':
@@ -185,6 +342,11 @@ export class MatrixSettingsTab extends PluginSettingTab {
       case 'dailySectionHeading':
         if (typeof value !== 'string') return;
         await this.setDailySectionHeading(value);
+        break;
+      case 'quadrantMode':
+        if (typeof value !== 'string') return;
+        await this.setQuadrantMode(value);
+        this.refreshDefinitions();
         break;
       case 'warnWhenCompletingBlockedTask':
       case 'respectTaskDependenciesWhenSorting':
@@ -219,6 +381,8 @@ export class MatrixSettingsTab extends PluginSettingTab {
         dailyFolderOverride: this.plugin.settings.dailyFolderOverride,
         dailySectionHeading: this.plugin.settings.dailySectionHeading,
         excludedFolders: this.plugin.settings.excludedFolders,
+        quadrantMode: this.plugin.settings.quadrantMode,
+        quadrantRules: this.plugin.settings.quadrantRules,
         warnWhenCompletingBlockedTask: this.plugin.settings.warnWhenCompletingBlockedTask,
         respectTaskDependenciesWhenSorting: this.plugin.settings.respectTaskDependenciesWhenSorting,
         hideBlockedTasks: this.plugin.settings.hideBlockedTasks,
@@ -367,6 +531,8 @@ export class MatrixSettingsTab extends PluginSettingTab {
           }),
       );
 
+    this.renderQuadrantSection(containerEl);
+
     this.renderDependencyToggles(containerEl);
 
     // === Excluded folders ===
@@ -391,6 +557,37 @@ export class MatrixSettingsTab extends PluginSettingTab {
             await this.resetOverrides();
             this.display();
           }),
+      );
+  }
+
+  private renderQuadrantSection(parent: HTMLElement): void {
+    new Setting(parent)
+      .setName(QUADRANT_MODE_NAME)
+      .setDesc(QUADRANT_MODE_DESC)
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOptions(QUADRANT_MODE_OPTIONS)
+          .setValue(this.plugin.settings.quadrantMode)
+          .onChange(async (value) => {
+            await this.setQuadrantMode(value);
+            this.display();
+          }),
+      );
+    if (this.plugin.settings.quadrantMode !== 'rules') return;
+    for (const q of RULE_QUADRANTS) {
+      new Setting(parent).setName(`${q} rule`).setHeading();
+      this.renderRuleEnabled(new Setting(parent).setName('Enabled'), q);
+      this.renderRulePriority(new Setting(parent).setName('Priority'), q);
+      this.renderRuleDue(new Setting(parent).setName('Due date').setDesc(RULE_DUE_DESC), q);
+    }
+    new Setting(parent)
+      .setName(RESET_RULES_NAME)
+      .setDesc(RESET_RULES_DESC)
+      .addButton((btn) =>
+        btn.setButtonText('Reset rules').onClick(async () => {
+          await this.resetQuadrantRules();
+          this.display();
+        }),
       );
   }
 

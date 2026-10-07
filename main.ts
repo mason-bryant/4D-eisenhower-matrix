@@ -3,6 +3,7 @@ import { MatrixView, VIEW_TYPE_MATRIX } from './src/view/MatrixView.ts';
 import { DEFAULT_SETTINGS, type PluginSettings } from './src/settings/settings.ts';
 import { MatrixSettingsTab } from './src/settings/SettingsTab.ts';
 import { validateGraphPositions } from './src/core/graphLayout.ts';
+import { normalizeQuadrantRules } from './src/core/quadrantRules.ts';
 
 // Vlastní ikona pro stav "In progress" [/] — Lucide nemá half-square,
 // tak ji zaregistrujeme: hranatý rámeček + vyplněná levá polovina (Things-style).
@@ -54,6 +55,8 @@ export default class EisenhowerMatrixPlugin extends Plugin {
         ...(loaded?.collapsedQuadrants ?? {}),
       },
     };
+    if (this.settings.quadrantMode !== 'rules') this.settings.quadrantMode = 'tags';
+    this.settings.quadrantRules = normalizeQuadrantRules(this.settings.quadrantRules);
     this.settings.graphPositions = validateGraphPositions(this.settings.graphPositions, (key) => console.warn(`[4D Matrix] Ignoring invalid graph position: ${key}`));
     const zoom = Number(this.settings.graphZoom);
     if (!Number.isFinite(zoom) || zoom < .25 || zoom > 2) console.warn('[4D Matrix] Clamping invalid graph zoom');

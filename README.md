@@ -21,6 +21,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 | Feature | What it does |
 |---------|--------------|
 | **5-quadrant matrix** | DO / DECIDE / DELEGATE / DELETE plus a catch-all **OPEN**. The quadrant is the first `#tag` after the checkbox (`#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`); anything else lands in OPEN. |
+| **Rule-based quadrants** *(optional)* | Switch **Quadrant assignment** to **Rules** and untagged tasks are placed by priority and due date — e.g. DO = Medium+ priority and overdue or due by tomorrow. A quadrant tag still wins, so dragging a card pins it. See [Settings](#settings). |
 | **Kanban view** | Expand any quadrant to full width with **To-do · In progress · Scheduled · Done** status columns. On desktop drag cards between columns to change status, onto another quadrant to move them, or add a task straight into a column. On mobile/tablet the board scrolls horizontally and you change status via the card menu (*Mark as…*). |
 | **Dependency graph** | Shows goals above their blockers on an orthogonal grid, with unlinked tasks in a separate band. Levels that have prerequisites stay in one row and extend to the right (scroll or pan); tasks without prerequisites stack in a column under the task they block, with their links leaving sideways. Collapse branches, zoom, and place cards manually on desktop; the first manual move adds an `🆔` while grid coordinates stay in `data.json`. Mobile provides reading, navigation, menus, and task creation without drag. |
 | **Cross-vault aggregation** | Collects tasks from **every `.md` file** in the vault (Dataview-like), not just today's daily note — one board for your whole second brain. |
@@ -132,6 +133,13 @@ The parser recognises a named list of Tasks fields (`⏳`, `➕`, `🔁`, `🏁`
 - **Daily folder** — where new daily notes are created. Empty = respect the core "Daily notes" plugin config. Override = a custom path (with a folder suggester).
 - **Daily section heading** — the heading in the daily note under which today's tasks are read and added. Default: `# Today`. Set it to whatever you use (e.g. `# Dnes`, `## Tasks`).
 - **Excluded folders** — tasks from these folders are ignored. Default: none — add the folders you want excluded yourself. On Obsidian 1.13+ this is the native list UI (`+` opens a folder picker, each row has a delete button); on older versions it's the + / × UI with a folder suggester.
+- **Quadrant assignment** — **Tags** (default): the quadrant is the first `#tag` after the checkbox. **Rules**: that tag still wins (dragging writes it), and untagged tasks go to the first enabled rule they match, checked DO → DECIDE → DELEGATE → DELETE; no match = OPEN. Each rule ANDs a **priority** condition (any / at or above / at or below a level; no emoji = Normal) with **due-date** buckets (overdue / within N days / beyond N days / no due date — ticked buckets are OR'ed, none = any). Defaults, with "important" = Medium+ and "urgent" = overdue or due by tomorrow:
+  - **DO** — Medium or higher, overdue or due within 1 day
+  - **DECIDE** — Medium or higher
+  - **DELEGATE** — Normal or lower, overdue or due within 1 day
+  - **DELETE** — Low or lower
+
+  Normal-priority, non-urgent tasks stay in OPEN for triage. **Reset rules** restores these defaults.
 - **Warn when completing a blocked task** — asks for confirmation before closing a blocked task. Default: on.
 - **Respect task dependencies when sorting** — places prerequisites first within each quadrant. Default: on.
 - **Hide blocked tasks** — removes currently blocked tasks from the matrix. If a blocker is itself blocked, both cards can be hidden, so the matrix will not show what the chain is waiting for. Default: off.
