@@ -39,6 +39,7 @@ import { parseTaskLine } from '../core/parser.ts';
 import { FilterBar } from '../components/FilterBar.tsx';
 import { PropertyFilterBar } from '../components/PropertyFilterBar.tsx';
 import { collectProperties, noteMatchesProperty, notePropertyValues } from '../obsidian-adapter/properties.ts';
+import { applyQuadrantRules } from '../core/quadrantRules.ts';
 import { DateNav } from '../components/DateNav.tsx';
 import { SearchBox } from '../components/SearchBox.tsx';
 import { Icon } from '../components/Icon.tsx';
@@ -276,7 +277,8 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     setLoading(true);
     try {
       const result = await repo.getMatrixTasks(date);
-      setTasks(result.tasks);
+      const { quadrantMode, quadrantRules } = plugin.settings;
+      setTasks(applyQuadrantRules(result.tasks, quadrantMode, quadrantRules, formatDateISO(new Date())));
       setTodayFileExists(result.todayFileExists);
       setScannedFiles(result.scannedFiles);
       setExistingDates(repo.getExistingDailyDates());
@@ -286,7 +288,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [repo, date]);
+  }, [repo, date, plugin]);
 
   const scheduleRefetch = useCallback(() => {
     if (refetchTimerRef.current) window.clearTimeout(refetchTimerRef.current);
@@ -910,6 +912,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
       try {
         await repo.moveTask(task.sourceFile, task.lineIndex, targetQuadrant);
+        // Rules mode: removing a tag (→ OPEN) may hand the task back to a rule,
+        // and a no-op write fires no vault event — recompute explicitly.
+        if (plugin.settings.quadrantMode === 'rules') scheduleRefetch();
       } catch (err) {
         // rollback
         setTasks((prev) =>
@@ -918,7 +923,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         showError(`Move failed: ${String((err as Error).message ?? err)}`);
       }
     },
-    [repo],
+    [repo, plugin, scheduleRefetch],
   );
 
   // Kanban drop ze spodního kvadrantu do status-sloupce: kvadrant + status najednou.
