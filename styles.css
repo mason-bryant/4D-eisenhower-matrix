@@ -1729,3 +1729,14 @@ button.em-priority {
 .em-rule-due-days {
   width: 4.5em;
 }
+
+/* === Clickable source note === */
+.em-task-source-link {
+  cursor: pointer;
+}
+
+.em-task-source-link:hover,
+.em-task-source-link:focus-visible {
+  color: var(--text-accent);
+  text-decoration: underline;
+}

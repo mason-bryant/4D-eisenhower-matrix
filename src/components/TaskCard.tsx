@@ -18,6 +18,9 @@ import { renderInlineMarkdown, type InlineLinkHandler } from './inlineMarkdown.t
 
 export const GRACE_MS = 3000;
 
+/** Click on the 📁 source line: open/focus the note. Null = navigation disabled. */
+export const SourceNavigationContext = createContext<((task: Task) => void) | null>(null);
+
 export const DependencyNavigationContext = createContext<
   ((task: Task, event?: React.MouseEvent) => void) | null
 >(null);
@@ -116,6 +119,7 @@ export function TaskCard({
   onMouseLeave,
 }: Props) {
   const navigateToDependency = useContext(DependencyNavigationContext);
+  const navigateToSource = useContext(SourceNavigationContext);
   const overdue = isOverdue(task, today);
   const [editing, setEditing] = useState(false);
   const [linkedKind, setLinkedKind] = useState<LinkedTaskKind | null>(null);
@@ -433,9 +437,31 @@ export function TaskCard({
           <div className="em-task-body">
             <p className="em-task-text">{taskText}</p>
             {!task.isFromDnes && (
-              <p className="em-task-source" title={task.sourceFile}>
-                📁 {shortenPath(task.sourceFile)}
-              </p>
+              navigateToSource ? (
+                <p
+                  className="em-task-source em-task-source-link"
+                  title={`Open ${task.sourceFile}`}
+                  role="link"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigateToSource(task);
+                  }}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigateToSource(task);
+                  }}
+                >
+                  📁 {shortenPath(task.sourceFile)}
+                </p>
+              ) : (
+                <p className="em-task-source" title={task.sourceFile}>
+                  📁 {shortenPath(task.sourceFile)}
+                </p>
+              )
             )}
             <div className="em-task-badges">
               {dependencyBadges}

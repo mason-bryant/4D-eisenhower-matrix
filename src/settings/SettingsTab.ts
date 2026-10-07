@@ -58,6 +58,9 @@ const RESPECT_DEPENDENCIES_NAME = 'Respect task dependencies when sorting';
 const RESPECT_DEPENDENCIES_DESC = 'Place blocking tasks before the tasks that depend on them.';
 const HIDE_BLOCKED_NAME = 'Hide blocked tasks';
 const HIDE_BLOCKED_DESC = 'Hide tasks that have at least one unfinished dependency.';
+const OPEN_SOURCE_NAME = 'Open note from task card';
+const OPEN_SOURCE_DESC =
+  "Click the 📁 note name on a task card to open that note — or switch to it if it's already open. Off = the note name isn't clickable.";
 
 const RESET_NAME = 'Reset to defaults';
 const RESET_DESC =
@@ -118,6 +121,11 @@ export class MatrixSettingsTab extends PluginSettingTab {
         name: HIDE_BLOCKED_NAME,
         desc: HIDE_BLOCKED_DESC,
         control: { type: 'toggle', key: 'hideBlockedTasks' },
+      },
+      {
+        name: OPEN_SOURCE_NAME,
+        desc: OPEN_SOURCE_DESC,
+        control: { type: 'toggle', key: 'openSourceOnClick' },
       },
       {
         type: 'list',
@@ -322,6 +330,8 @@ export class MatrixSettingsTab extends PluginSettingTab {
         return this.plugin.settings.respectTaskDependenciesWhenSorting;
       case 'hideBlockedTasks':
         return this.plugin.settings.hideBlockedTasks;
+      case 'openSourceOnClick':
+        return this.plugin.settings.openSourceOnClick;
       default:
         return undefined;
     }
@@ -351,6 +361,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       case 'warnWhenCompletingBlockedTask':
       case 'respectTaskDependenciesWhenSorting':
       case 'hideBlockedTasks':
+      case 'openSourceOnClick':
         if (typeof value !== 'boolean') return;
         await this.setBooleanSetting(key, value);
         break;
@@ -386,6 +397,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
         warnWhenCompletingBlockedTask: this.plugin.settings.warnWhenCompletingBlockedTask,
         respectTaskDependenciesWhenSorting: this.plugin.settings.respectTaskDependenciesWhenSorting,
         hideBlockedTasks: this.plugin.settings.hideBlockedTasks,
+        openSourceOnClick: this.plugin.settings.openSourceOnClick,
         graphPositions: this.plugin.settings.graphPositions,
       };
       try {
@@ -432,7 +444,11 @@ export class MatrixSettingsTab extends PluginSettingTab {
   }
 
   private async setBooleanSetting(
-    key: 'warnWhenCompletingBlockedTask' | 'respectTaskDependenciesWhenSorting' | 'hideBlockedTasks',
+    key:
+      | 'warnWhenCompletingBlockedTask'
+      | 'respectTaskDependenciesWhenSorting'
+      | 'hideBlockedTasks'
+      | 'openSourceOnClick',
     value: boolean,
   ): Promise<void> {
     await this.mutate(() => {
@@ -482,6 +498,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       this.plugin.settings.warnWhenCompletingBlockedTask = DEFAULT_SETTINGS.warnWhenCompletingBlockedTask;
       this.plugin.settings.respectTaskDependenciesWhenSorting = DEFAULT_SETTINGS.respectTaskDependenciesWhenSorting;
       this.plugin.settings.hideBlockedTasks = DEFAULT_SETTINGS.hideBlockedTasks;
+      this.plugin.settings.openSourceOnClick = DEFAULT_SETTINGS.openSourceOnClick;
     });
   }
 
@@ -596,6 +613,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       [WARN_BLOCKED_NAME, WARN_BLOCKED_DESC, 'warnWhenCompletingBlockedTask'],
       [RESPECT_DEPENDENCIES_NAME, RESPECT_DEPENDENCIES_DESC, 'respectTaskDependenciesWhenSorting'],
       [HIDE_BLOCKED_NAME, HIDE_BLOCKED_DESC, 'hideBlockedTasks'],
+      [OPEN_SOURCE_NAME, OPEN_SOURCE_DESC, 'openSourceOnClick'],
     ] as const;
 
     for (const [name, desc, key] of toggles) {
