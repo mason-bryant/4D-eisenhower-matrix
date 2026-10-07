@@ -42,6 +42,7 @@ import { SearchBox } from '../components/SearchBox.tsx';
 import { Icon } from '../components/Icon.tsx';
 import {
   DependencyNavigationContext,
+  SourceNavigationContext,
   SearchHighlightContext,
   TaskEditingContext,
   TaskCardOverlay,
@@ -488,6 +489,32 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         active: true,
         eState: { line: task.lineIndex },
       });
+    },
+    [app],
+  );
+
+  /**
+   * 📁 source click: focus a tab that already shows the note (jumping to the
+   * task's line), otherwise open it in a new tab so the matrix stays open.
+   */
+  const handleNavigateToSource = useCallback(
+    (task: Task) => {
+      const file = app.vault.getFileByPath(task.sourceFile);
+      if (!file) {
+        showError(`File not found: ${task.sourceFile}`);
+        return;
+      }
+      const eState = { line: task.lineIndex };
+      const existing = app.workspace
+        .getLeavesOfType('markdown')
+        .find((leaf) => (leaf.view as { file?: { path: string } | null }).file?.path === file.path);
+      if (existing) {
+        app.workspace.setActiveLeaf(existing, { focus: true });
+        void app.workspace.revealLeaf(existing);
+        existing.setEphemeralState(eState);
+        return;
+      }
+      void app.workspace.getLeaf('tab').openFile(file, { active: true, eState });
     },
     [app],
   );
@@ -1068,6 +1095,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
         <TaskEditingContext.Provider value={{ app, tasks }}>
         <DependencyNavigationContext.Provider value={handleNavigateToDependency}>
+        <SourceNavigationContext.Provider
+          value={plugin.settings.openSourceOnClick ? handleNavigateToSource : null}
+        >
         <SearchHighlightContext.Provider value={searchHighlight}>
         <div className="em-app-body">
         {graphView ? (
@@ -1156,6 +1186,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         )}
         </div>
         </SearchHighlightContext.Provider>
+        </SourceNavigationContext.Provider>
         </DependencyNavigationContext.Provider>
         </TaskEditingContext.Provider>
       </div>

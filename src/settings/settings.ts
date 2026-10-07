@@ -43,6 +43,8 @@ export type PluginSettings = {
   respectTaskDependenciesWhenSorting: boolean;
   /** Skryje úkoly, které čekají na alespoň jeden otevřený blokátor. */
   hideBlockedTasks: boolean;
+  /** Clicking a card's 📁 source line opens (or focuses) that note. */
+  openSourceOnClick: boolean;
   /**
    * Kanban režim (desktop i mobil/tablet): pokud je nastaven kvadrant, ten se rozbalí
    * na celou šířku se 4 status-sloupci (To-do / In progress / Scheduled /
@@ -76,6 +78,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   warnWhenCompletingBlockedTask: true,
   respectTaskDependenciesWhenSorting: true,
   hideBlockedTasks: false,
+  openSourceOnClick: true,
   kanbanQuadrant: null,
   graphView: false,
   graphPositions: {},

@@ -1691,3 +1691,14 @@ button.em-priority {
     grid-template-columns: 1fr;
   }
 }
+
+/* === Clickable source note === */
+.em-task-source-link {
+  cursor: pointer;
+}
+
+.em-task-source-link:hover,
+.em-task-source-link:focus-visible {
+  color: var(--text-accent);
+  text-decoration: underline;
+}

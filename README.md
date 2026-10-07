@@ -93,7 +93,7 @@ Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+
 | Edit a task | **Desktop:** double-click the card. **Mobile:** long-press / double-tap → menu → Edit |
 | Change due date alone | Click the 📅 badge on the card |
 | Move between quadrants | **Desktop:** drag the card onto the target quadrant. **Mobile:** long-press / double-tap → menu → "Move to…" |
-| Open the source file | **Desktop:** right-click the card. **Mobile:** long-press / double-tap. → menu (current pane / new tab / split / window) — the cursor lands on the task's line |
+| Open the source file | Click the 📁 note name on the card — switches to the note if it's already open, otherwise opens it in a new tab (the matrix stays open); can be turned off in Settings. Or **Desktop:** right-click the card. **Mobile:** long-press / double-tap. → menu (current pane / new tab / split / window) — the cursor lands on the task's line |
 | Filter by tag | Click a chip in the filter bar (multi-select, OR) |
 | Due-date quick filter | The **Today** (overdue + due today) / **Selected** (due on the date picked in the header) / **This week** (overdue + next 7 days) buttons at the start of the filter bar |
 | Previous / next day | The ← → arrows in the header, the calendar, or "Today" |
@@ -135,6 +135,8 @@ The parser recognises a named list of Tasks fields (`⏳`, `➕`, `🔁`, `🏁`
 - **Warn when completing a blocked task** — asks for confirmation before closing a blocked task. Default: on.
 - **Respect task dependencies when sorting** — places prerequisites first within each quadrant. Default: on.
 - **Hide blocked tasks** — removes currently blocked tasks from the matrix. If a blocker is itself blocked, both cards can be hidden, so the matrix will not show what the chain is waiting for. Default: off.
+
+- **Open note from task card** — clicking the 📁 note name on a card opens that note, or switches to it if it's already open. Off = the name is plain text. Default: on.
 
 On Obsidian 1.13 and later the settings also show up in the search box at the top of the Settings window.
 
