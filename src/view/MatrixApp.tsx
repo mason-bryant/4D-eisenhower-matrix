@@ -37,6 +37,8 @@ import { KanbanView } from '../components/KanbanView.tsx';
 import { GraphView } from '../components/GraphView.tsx';
 import { parseTaskLine } from '../core/parser.ts';
 import { FilterBar } from '../components/FilterBar.tsx';
+import { PropertyFilterBar } from '../components/PropertyFilterBar.tsx';
+import { collectProperties, noteMatchesProperty, notePropertyValues } from '../obsidian-adapter/properties.ts';
 import { DateNav } from '../components/DateNav.tsx';
 import { SearchBox } from '../components/SearchBox.tsx';
 import { Icon } from '../components/Icon.tsx';
@@ -164,6 +166,10 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   // Settings (persisted)
   const [selectedTags, setSelectedTags] = useState<string[]>(plugin.settings.selectedTags);
   const [dueFilter, setDueFilter] = useState<DueFilter>(plugin.settings.dueFilter);
+  const [propertyKey, setPropertyKey] = useState<string>(plugin.settings.propertyFilterKey);
+  const [propertyValues, setPropertyValues] = useState<string[]>(
+    plugin.settings.propertyFilterValues,
+  );
   const [collapsed, setCollapsed] = useState<Record<Quadrant, boolean>>(
     plugin.settings.collapsedQuadrants,
   );
@@ -227,6 +233,12 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     plugin.settings.dueFilter = dueFilter;
     void plugin.saveSettings();
   }, [dueFilter, plugin]);
+
+  useEffect(() => {
+    plugin.settings.propertyFilterKey = propertyKey;
+    plugin.settings.propertyFilterValues = propertyValues;
+    void plugin.saveSettings();
+  }, [propertyKey, propertyValues, plugin]);
 
   useEffect(() => {
     plugin.settings.collapsedQuadrants = collapsed;
@@ -295,8 +307,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     refs.push(app.vault.on('create', scheduleRefetch));
     refs.push(app.vault.on('delete', scheduleRefetch));
     refs.push(app.vault.on('rename', scheduleRefetch));
+    // Frontmatter edits reach metadataCache after vault 'modify' fires.
+    const metaRef = app.metadataCache.on('changed', scheduleRefetch);
     return () => {
       for (const ref of refs) app.vault.offref(ref);
+      app.metadataCache.offref(metaRef);
       if (refetchTimerRef.current) window.clearTimeout(refetchTimerRef.current);
     };
   }, [app, scheduleRefetch]);
@@ -575,9 +590,23 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     return still && still.text === pinnedTask.text ? pinnedTask.key : null;
   }, [pinnedTask, tasks]);
 
+  /** Source files that pass the property filter (null = filter off). */
+  const propertyMatchedFiles = useMemo(() => {
+    if (!propertyKey) return null;
+    const files = new Set<string>();
+    for (const path of new Set(tasks.map((t) => t.sourceFile))) {
+      if (noteMatchesProperty(app, path, propertyKey, propertyValues)) files.add(path);
+    }
+    return files;
+  }, [app, tasks, propertyKey, propertyValues]);
+
   const passesFilters = useCallback(
     (t: Task): boolean => {
       if (!graphView && plugin.settings.hideBlockedTasks && t.isBlocked) return false;
+      // Today's daily note always passes — new tasks land there.
+      if (propertyMatchedFiles && !t.isFromDnes && !propertyMatchedFiles.has(t.sourceFile)) {
+        return false;
+      }
       if (!matchesFilter(t, selectedTags)) return false;
       if (!matchesDueFilter(t, dueFilter, today, date)) return false;
       if (showCompleted) return true;
@@ -586,7 +615,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       if (!isClosedStatus(t.status)) return true;
       return graceMap.has(taskKey(t.sourceFile, t.lineIndex));
     },
-    [plugin, selectedTags, dueFilter, today, date, showCompleted, graceMap, graphView],
+    [plugin, selectedTags, dueFilter, today, date, showCompleted, graceMap, graphView, propertyMatchedFiles],
   );
 
   /** Co projde filtry — bez ohledu na hledání. Tohle je číslo ve filter baru. */
@@ -717,7 +746,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   // takže od té chvíle má rozhodovat filtr, ne starý nález.
   useEffect(() => {
     setPinnedTask(null);
-  }, [date, selectedTags, dueFilter, showCompleted]);
+  }, [date, selectedTags, dueFilter, showCompleted, propertyKey, propertyValues]);
 
   const availableTags = useMemo(
     () =>
@@ -726,6 +755,56 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       ),
     [tasks, showCompleted],
   );
+
+  /**
+   * Every frontmatter property in the scanned notes. `tasks` changes on each
+   * refetch, which is when properties can change.
+   */
+  const propertyKeys = useMemo(
+    () => [...collectProperties(app, plugin.settings.excludedFolders).keys()],
+    [app, plugin, tasks],
+  );
+
+  /** Values of the selected property, counted by open tasks in those notes. */
+  const propertyValueCounts = useMemo(() => {
+    if (!propertyKey) return [];
+    const counts = new Map<string, { value: string; count: number }>();
+    for (const t of tasks) {
+      if (t.isFromDnes) continue;
+      if (!showCompleted && isClosedStatus(t.status)) continue;
+      for (const value of notePropertyValues(app, t.sourceFile, propertyKey) ?? []) {
+        const k = value.toLowerCase();
+        const entry = counts.get(k) ?? { value, count: 0 };
+        entry.count++;
+        counts.set(k, entry);
+      }
+    }
+    // Keep selected values visible even when no task uses them right now.
+    for (const value of propertyValues) {
+      if (!counts.has(value.toLowerCase())) counts.set(value.toLowerCase(), { value, count: 0 });
+    }
+    return [...counts.values()].sort(
+      (a, b) => b.count - a.count || a.value.localeCompare(b.value),
+    );
+  }, [app, tasks, propertyKey, propertyValues, showCompleted]);
+
+  const selectPropertyKey = useCallback((key: string) => {
+    setPropertyKey(key);
+    setPropertyValues([]);
+  }, []);
+
+  const togglePropertyValue = useCallback((value: string) => {
+    setPropertyValues((prev) =>
+      prev.some((v) => v.toLowerCase() === value.toLowerCase())
+        ? prev.filter((v) => v.toLowerCase() !== value.toLowerCase())
+        : [...prev, value],
+    );
+  }, []);
+
+  const clearPropertyFilter = useCallback(() => {
+    setPropertyKey('');
+    setPropertyValues([]);
+  }, []);
 
   // Live ref na seznam tagů pro autocomplete v add/edit formech.
   // Ref místo state aby se TagSuggest nemusel re-instantovat když se tagy mění.
@@ -1062,6 +1141,16 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           onClear={clearFilters}
           totalCount={totalUnfiltered}
           filteredCount={filteredTasks.length}
+        />
+
+        <PropertyFilterBar
+          propertyKeys={propertyKeys}
+          selectedKey={propertyKey}
+          values={propertyValueCounts}
+          selectedValues={propertyValues}
+          onSelectKey={selectPropertyKey}
+          onToggleValue={togglePropertyValue}
+          onClear={clearPropertyFilter}
         />
         </div>
         )}

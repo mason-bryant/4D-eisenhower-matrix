@@ -54,6 +54,8 @@ export default class EisenhowerMatrixPlugin extends Plugin {
         ...(loaded?.collapsedQuadrants ?? {}),
       },
     };
+    if (typeof this.settings.propertyFilterKey !== 'string') this.settings.propertyFilterKey = '';
+    if (!Array.isArray(this.settings.propertyFilterValues)) this.settings.propertyFilterValues = [];
     this.settings.graphPositions = validateGraphPositions(this.settings.graphPositions, (key) => console.warn(`[4D Matrix] Ignoring invalid graph position: ${key}`));
     const zoom = Number(this.settings.graphZoom);
     if (!Number.isFinite(zoom) || zoom < .25 || zoom > 2) console.warn('[4D Matrix] Clamping invalid graph zoom');

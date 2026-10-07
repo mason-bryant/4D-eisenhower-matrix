@@ -17,6 +17,14 @@ export type PluginSettings = {
   lastOpenedDate: string | null;
   excludedFolders: string[];
   /**
+   * Frontmatter property filter (filter bar). Empty key = off. With a key,
+   * only tasks from notes whose property has one of `propertyFilterValues`
+   * (case-insensitive; any item for list properties) are shown; no values =
+   * the property just has to exist. Today's daily note always passes.
+   */
+  propertyFilterKey: string;
+  propertyFilterValues: string[];
+  /**
    * Override pro daily notes folder. Prázdný string = použij konfiguraci
    * z core pluginu „Daily notes". Cesta relativní k vault rootu.
    */
@@ -69,6 +77,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   // Prázdné — uživatel si vyloučené složky nastaví sám (v Settings).
   // Generic plugin nemá hádat vault-specifické složky.
   excludedFolders: [],
+  propertyFilterKey: '',
+  propertyFilterValues: [],
   dailyFolderOverride: '',
   dailySectionHeading: '# Today',
   headerCollapsed: false,

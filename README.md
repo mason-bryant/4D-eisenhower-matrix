@@ -32,6 +32,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 | **Clickable links** | `[[wikilinks]]` (with `#heading` / `\|alias`) and `[text](url)` in the task title are live — click to open the note (resolved relative to the task's file) or the URL; Ctrl/Cmd-click opens in a new pane. Clicks don't trigger drag or edit. Only `https:`/`http:`/`mailto:` URLs open externally — other schemes stay plain text. |
 | **Tag autocomplete** | Suggests existing vault tags as you type, so you don't create near-duplicates. |
 | **Filter by tag** | Context-tag chips in the filter bar (multi-select, OR logic) + a virtual "Other" chip for untagged tasks. |
+| **Filter by property** | A second filter row: pick any frontmatter property found in the scanned notes, then one or more of its values (OR logic, case-insensitive, list properties supported). Each value chip shows its open-task count. With no value selected, any note that has the property passes. Today's daily note always passes, so new tasks never vanish. |
 | **Due-date quick filters** | **Today** (overdue + due today), **Selected** (due exactly on the date picked in the header), and **This week** (overdue + next 7 days) buttons at the start of the filter bar, set apart in orange. |
 | **Date navigation** | ← / → / calendar / Today, plus a day-cutoff banner offering to jump to today after midnight. |
 | **Undo grace period** | A 3-second window with a green countdown bar after you complete or cancel a task — click again to undo. |
@@ -95,6 +96,7 @@ Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+
 | Move between quadrants | **Desktop:** drag the card onto the target quadrant. **Mobile:** long-press / double-tap → menu → "Move to…" |
 | Open the source file | **Desktop:** right-click the card. **Mobile:** long-press / double-tap. → menu (current pane / new tab / split / window) — the cursor lands on the task's line |
 | Filter by tag | Click a chip in the filter bar (multi-select, OR) |
+| Filter by property | Choose a property in the **Property** dropdown under the filter bar, then click value chips (multi-select, OR) · *clear* resets it |
 | Due-date quick filter | The **Today** (overdue + due today) / **Selected** (due on the date picked in the header) / **This week** (overdue + next 7 days) buttons at the start of the filter bar |
 | Previous / next day | The ← → arrows in the header, the calendar, or "Today" |
 | Collapse a quadrant | Click the ▼/▶ arrow next to the quadrant name |
