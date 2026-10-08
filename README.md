@@ -40,7 +40,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 | **Task search** | The magnifier left of "Collapse all" opens a search box that scans the visible day's tasks (text, tags, source file name), ignoring case and diacritics. It jumps to each hit, expanding a collapsed quadrant or switching the Kanban board if needed, and shows hits that the active filters would otherwise hide. Enter / Shift+Enter (or the ▲ ▼ buttons) walk the hits, Esc closes the box and leaves the last hit visible. |
 | **Collapsible UI** | Collapse individual quadrants or the whole header to free up space — handy on mobile. |
 | **Deterministic sorting** | Within a quadrant: overdue → priority → due date → alphabetical. No accidental drag-reordering. |
-| **Daily note integration** | New tasks go under a **configurable section heading**; if today's daily note is missing it's created automatically, honoring your core "Daily notes" template (`{{date}}`, `{{title}}`, `{{time}}`). |
+| **Daily note integration** | New tasks go under a **configurable section heading**; if today's daily note is missing it's created automatically, honoring your core "Daily notes" **date format** (file name, incl. subfolders) and template (`{{date}}`, `{{date:FORMAT}}`, `{{title}}`, `{{time}}`). |
 | **Excluded folders** | Point the matrix away from templates, archives or anything you don't want scanned. |
 | **Task dependencies** | Reads Obsidian Tasks `🆔` / `⛔` links, puts prerequisites first, and edits Previous task / Follow-up task relationships by task name; the right-click menu creates a new previous or follow-up task directly. |
 | **Desktop & mobile** | Works on desktop and Android (`isDesktopOnly: false`); responsive layout with touch-friendly controls. |
@@ -142,8 +142,10 @@ On Obsidian 1.13 and later the settings also show up in the search box at the to
 
 The plugin looks for a configurable section heading in the daily note (set via **Settings → Daily section heading**, default `# Today`). New tasks are inserted under that heading.
 
+Daily notes are found and named using the core "Daily notes" plugin's **date format** (moment.js syntax, e.g. `MM-DD-YYYY (ddd)` or `YYYY/MM/YYYY-MM-DD`); without one, `YYYY-MM-DD`.
+
 If a daily note for the given day doesn't exist and you add the first task, the plugin **creates it automatically**:
-1. If the core "Daily notes" plugin has a **template** configured, it uses that (expanding `{{date}}`, `{{title}}`, `{{time}}`).
+1. If the core "Daily notes" plugin has a **template** configured, it uses that (expanding `{{date}}`, `{{date:FORMAT}}`, `{{title}}`, `{{time}}`, `{{time:FORMAT}}` like core Daily notes).
 2. Otherwise it falls back to a minimal scaffold (frontmatter + the configured section heading).
 
 ## Mobile
@@ -158,7 +160,6 @@ Works on Android (`isDesktopOnly: false`; iOS untested but should work).
 
 - [ ] Quick-add task via the Command Palette (without opening the view)
 - [ ] Keyboard shortcuts inside the view (J/K navigation, X toggle, N new task)
-- [ ] Full moment.js syntax in daily templates (currently only `{{date}}` / `{{title}}` / `{{time}}`)
 
 Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues).
 

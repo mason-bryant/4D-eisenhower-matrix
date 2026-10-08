@@ -1,3 +1,8 @@
+export { default as moment } from 'moment';
+
+export function normalizePath(path: string): string {
+  return path.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/|\/$/g, '');
+}
 export class MarkdownView {}
 
 /**
