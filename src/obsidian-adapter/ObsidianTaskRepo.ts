@@ -18,10 +18,11 @@ import { indexTaskDependencies } from '../core/taskUtils.ts';
 import {
   buildDailyNotePath,
   ensureDailyExists,
+  getDailyNoteFilenameFormat,
   getDailyNotesFolder,
 } from './dailyNotes.ts';
+import { parseDailyNoteName } from '../core/dailyNoteNames.ts';
 
-const DATE_FILE_RE = /^(\d{4}-\d{2}-\d{2})\.md$/;
 
 export type TaskDependencySelection = {
   beforeTasks: Task[];
@@ -163,15 +164,14 @@ export class ObsidianTaskRepo {
 
   getExistingDailyDates(): Set<string> {
     const folder = getDailyNotesFolder(this.app, this.dailyFolderOverride);
+    const format = getDailyNoteFilenameFormat(this.app);
+    const prefix = folder ? `${folder}/` : '';
     const dates = new Set<string>();
-    const files = this.app.vault.getMarkdownFiles();
-    for (const f of files) {
-      const fileDir = f.parent?.path ?? '';
-      const inFolder =
-        folder === '' ? (fileDir === '' || fileDir === '/') : fileDir === folder;
-      if (!inFolder) continue;
-      const m = DATE_FILE_RE.exec(f.name);
-      if (m) dates.add(m[1]);
+    for (const f of this.app.vault.getMarkdownFiles()) {
+      if (!f.path.startsWith(prefix)) continue;
+      // Path relative to the daily folder — the format may include subfolders.
+      const iso = parseDailyNoteName(f.path.slice(prefix.length).replace(/\.md$/, ''), format);
+      if (iso) dates.add(iso);
     }
     return dates;
   }
