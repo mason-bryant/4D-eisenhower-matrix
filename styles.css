@@ -1691,3 +1691,11 @@ button.em-priority {
     grid-template-columns: 1fr;
   }
 }
+
+/* === Kanban sort === */
+.em-kanban-sort {
+  font-size: var(--font-ui-smaller);
+  height: auto;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}

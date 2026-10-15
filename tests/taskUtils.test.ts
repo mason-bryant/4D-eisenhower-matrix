@@ -4,6 +4,7 @@ import {
   indexTaskDependencies,
   makeCompareTask,
   matchesDueFilter,
+  makeSortComparator,
   matchesSearch,
   normalizeForSearch,
   sortTasksByDependencies,
@@ -199,5 +200,35 @@ describe('matchesSearch', () => {
 
   it('empty query matches nothing', () => {
     expect(matchesSearch(t, '')).toBe(false);
+  });
+});
+
+describe('makeSortComparator', () => {
+  const t = (text: string, priority?: Task['priority'], dueDate?: string) =>
+    task(dueDate, { text, priority });
+  const order = (mode: Parameters<typeof makeSortComparator>[0], tasks: Task[]) =>
+    [...tasks].sort(makeSortComparator(mode)!).map((x) => x.text);
+
+  const tasks = [
+    t('b', 'low', '2026-10-01'),
+    t('a', undefined, '2026-10-20'),
+    t('c', 'high'),
+    t('d', 'high', '2026-10-05'),
+  ];
+
+  it('returns null for default', () => {
+    expect(makeSortComparator('default')).toBeNull();
+  });
+
+  it('sorts by priority on the Tasks scale (none between medium and low), then due', () => {
+    expect(order('priority', tasks)).toEqual(['d', 'c', 'a', 'b']);
+  });
+
+  it('sorts by due date with undated last, then priority', () => {
+    expect(order('due', tasks)).toEqual(['b', 'd', 'a', 'c']);
+  });
+
+  it('sorts alphabetically, case-insensitively', () => {
+    expect(order('alpha', [t('Beta'), t('alpha'), t('Gamma')])).toEqual(['alpha', 'Beta', 'Gamma']);
   });
 });

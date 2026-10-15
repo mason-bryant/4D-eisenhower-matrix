@@ -31,6 +31,7 @@ import {
   normalizeForSearch,
   UNTAGGED_FILTER,
   type DueFilter,
+  type TaskSortMode,
 } from '../core/taskUtils.ts';
 import { Matrix } from '../components/Matrix.tsx';
 import { KanbanView } from '../components/KanbanView.tsx';
@@ -175,6 +176,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const [kanbanQuadrant, setKanbanQuadrant] = useState<Quadrant | null>(
     plugin.settings.kanbanQuadrant,
   );
+  const [kanbanSort, setKanbanSort] = useState<TaskSortMode>(plugin.settings.kanbanSort);
   const [graphView, setGraphView] = useState(plugin.settings.graphView);
   const [graphPositions, setGraphPositions] = useState(plugin.settings.graphPositions);
   const [graphZoom, setGraphZoom] = useState(plugin.settings.graphZoom);
@@ -253,6 +255,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     void plugin.saveSettings();
   }, [kanbanQuadrant, plugin]);
 
+  useEffect(() => { plugin.settings.kanbanSort = kanbanSort; void plugin.saveSettings(); }, [kanbanSort, plugin]);
   useEffect(() => { plugin.settings.graphView = graphView; void plugin.saveSettings(); }, [graphView, plugin]);
   useEffect(() => { plugin.settings.graphPositions = graphPositions; void plugin.saveSettings(); }, [graphPositions, plugin]);
   useEffect(() => { plugin.settings.graphZoom = graphZoom; void plugin.saveSettings(); }, [graphZoom, plugin]);
@@ -1113,6 +1116,8 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             collapsed={collapsed}
             graceMap={graceMap}
             compact={compactMode}
+            sortMode={kanbanSort}
+            onSortModeChange={setKanbanSort}
             activeTaskId={
               activeTask ? taskKey(activeTask.sourceFile, activeTask.lineIndex) : null
             }
