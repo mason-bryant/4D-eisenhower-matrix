@@ -31,6 +31,7 @@ import {
   normalizeForSearch,
   UNTAGGED_FILTER,
   type DueFilter,
+  makeSortComparator,
   type TaskSortMode,
 } from '../core/taskUtils.ts';
 import { Matrix } from '../components/Matrix.tsx';
@@ -52,6 +53,13 @@ import {
 import type { InlineLinkTarget } from '../components/inlineMarkdown.tsx';
 import { TagSuggest } from '../components/TagSuggest.ts';
 import type EisenhowerMatrixPlugin from '../../main.ts';
+
+const TASK_SORT_OPTIONS: { value: TaskSortMode; label: string }[] = [
+  { value: 'default', label: 'Default' },
+  { value: 'priority', label: 'Priority' },
+  { value: 'due', label: 'Due date' },
+  { value: 'alpha', label: 'A–Z' },
+];
 
 type Props = {
   app: App;
@@ -176,7 +184,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const [kanbanQuadrant, setKanbanQuadrant] = useState<Quadrant | null>(
     plugin.settings.kanbanQuadrant,
   );
-  const [kanbanSort, setKanbanSort] = useState<TaskSortMode>(plugin.settings.kanbanSort);
+  const [taskSort, setTaskSort] = useState<TaskSortMode>(plugin.settings.taskSort);
   const [graphView, setGraphView] = useState(plugin.settings.graphView);
   const [graphPositions, setGraphPositions] = useState(plugin.settings.graphPositions);
   const [graphZoom, setGraphZoom] = useState(plugin.settings.graphZoom);
@@ -255,7 +263,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     void plugin.saveSettings();
   }, [kanbanQuadrant, plugin]);
 
-  useEffect(() => { plugin.settings.kanbanSort = kanbanSort; void plugin.saveSettings(); }, [kanbanSort, plugin]);
+  useEffect(() => { plugin.settings.taskSort = taskSort; void plugin.saveSettings(); }, [taskSort, plugin]);
   useEffect(() => { plugin.settings.graphView = graphView; void plugin.saveSettings(); }, [graphView, plugin]);
   useEffect(() => { plugin.settings.graphPositions = graphPositions; void plugin.saveSettings(); }, [graphPositions, plugin]);
   useEffect(() => { plugin.settings.graphZoom = graphZoom; void plugin.saveSettings(); }, [graphZoom, plugin]);
@@ -612,12 +620,13 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [tasks, passesFilters, normalizedQuery, pinnedTaskKey],
   );
 
-  const sortedVisibleTasks = useMemo(
-    () => plugin.settings.respectTaskDependenciesWhenSorting
+  const sortedVisibleTasks = useMemo(() => {
+    const chosen = makeSortComparator(taskSort);
+    if (chosen) return [...visibleTasks].sort(chosen);
+    return plugin.settings.respectTaskDependenciesWhenSorting
       ? sortTasksByDependencies(visibleTasks, today)
-      : [...visibleTasks].sort(makeCompareTask(today)),
-    [visibleTasks, today, plugin],
-  );
+      : [...visibleTasks].sort(makeCompareTask(today));
+  }, [visibleTasks, today, plugin, taskSort]);
 
   // === Hledání ===
   // Shody v pořadí, v jakém jsou vykreslené — „další" tak jde odshora dolů.
@@ -944,6 +953,21 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         />
         <span>Done</span>
       </label>
+      {!graphView && (
+        <select
+          className="dropdown em-sort-select"
+          value={taskSort}
+          onChange={(e) => setTaskSort(e.currentTarget.value as TaskSortMode)}
+          aria-label="Sort tasks"
+          title="Order of cards in every quadrant and Kanban column"
+        >
+          {TASK_SORT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              Sort: {o.label}
+            </option>
+          ))}
+        </select>
+      )}
       <label className="em-toggle" title="Compact 2-line task cards">
         <input
           type="checkbox"
@@ -1116,8 +1140,6 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             collapsed={collapsed}
             graceMap={graceMap}
             compact={compactMode}
-            sortMode={kanbanSort}
-            onSortModeChange={setKanbanSort}
             activeTaskId={
               activeTask ? taskKey(activeTask.sourceFile, activeTask.lineIndex) : null
             }

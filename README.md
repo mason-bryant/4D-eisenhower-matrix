@@ -39,7 +39,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 | **Show / hide done** | The "Done" toggle reveals or hides finished tasks (`[x]` + `[-]`); the task counter follows the toggle. |
 | **Task search** | The magnifier left of "Collapse all" opens a search box that scans the visible day's tasks (text, tags, source file name), ignoring case and diacritics. It jumps to each hit, expanding a collapsed quadrant or switching the Kanban board if needed, and shows hits that the active filters would otherwise hide. Enter / Shift+Enter (or the ▲ ▼ buttons) walk the hits, Esc closes the box and leaves the last hit visible. |
 | **Collapsible UI** | Collapse individual quadrants or the whole header to free up space — handy on mobile. |
-| **Deterministic sorting** | Within a quadrant: overdue → priority → due date → alphabetical. No accidental drag-reordering. |
+| **Deterministic sorting** | Within a quadrant: overdue → priority → due date → alphabetical — or pick **Priority**, **Due date** or **A–Z** from the header's **Sort** dropdown. No accidental drag-reordering. |
 | **Daily note integration** | New tasks go under a **configurable section heading**; if today's daily note is missing it's created automatically, honoring your core "Daily notes" template (`{{date}}`, `{{title}}`, `{{time}}`). |
 | **Excluded folders** | Point the matrix away from templates, archives or anything you don't want scanned. |
 | **Task dependencies** | Reads Obsidian Tasks `🆔` / `⛔` links, puts prerequisites first, and edits Previous task / Follow-up task relationships by task name; the right-click menu creates a new previous or follow-up task directly. |
@@ -101,9 +101,10 @@ Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+
 | Collapse the whole header | The ▲ button top-right (handy on mobile) |
 | Search tasks | The magnifier left of "Collapse all" → type · Enter / ▼ next hit · Shift+Enter / ▲ previous · Esc / ✕ close (the last hit stays visible) |
 | Show completed tasks | The "Done" toggle in the header |
+| Sort tasks | The **Sort** dropdown in the header orders cards in every quadrant and Kanban column by **Priority**, **Due date** or **A–Z**; **Default** is the usual order (overdue → priority → due → text, with dependencies). Persisted. |
 | Compact view | The "Compact" toggle in the header — 2-line cards |
 | Set task status | Right-click the card (or the status box) → *Mark as…* |
-| Kanban view | Click the kanban icon in a quadrant header → status columns; click it again to return to the grid. The **Sort** dropdown in the header orders cards in every column by priority, due date or A–Z (Default = the usual quadrant order). On mobile/tablet the columns scroll horizontally; change a card's status via its menu (*Mark as…*) |
+| Kanban view | Click the kanban icon in a quadrant header → status columns; click it again to return to the grid. On mobile/tablet the columns scroll horizontally; change a card's status via its menu (*Mark as…*) |
 
 ### In-quadrant order
 

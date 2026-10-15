@@ -1,6 +1,6 @@
 import { useDroppable } from '@dnd-kit/core';
 import type { PaneType } from 'obsidian';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Priority, Quadrant as QuadrantKind, Task } from '../core/types.ts';
 import { QUADRANTS, QUADRANT_META } from '../core/types.ts';
 import { TaskCard, type DependencySelection, type LinkedTaskInput, type LinkedTaskKind } from './TaskCard.tsx';
@@ -8,14 +8,6 @@ import { Quadrant } from './Quadrant.tsx';
 import { AddTaskInput } from './AddTaskInput.tsx';
 import { Icon } from './Icon.tsx';
 import type { InlineLinkTarget } from './inlineMarkdown.tsx';
-import { makeSortComparator, type TaskSortMode } from '../core/taskUtils.ts';
-
-const SORT_OPTIONS: { value: TaskSortMode; label: string }[] = [
-  { value: 'default', label: 'Default' },
-  { value: 'priority', label: 'Priority' },
-  { value: 'due', label: 'Due date' },
-  { value: 'alpha', label: 'A–Z' },
-];
 
 // 4 status-sloupce. Forwarded [>] se zobrazí ve Scheduled, canceled [-] v Done
 // (drop ale vždy nastaví primární char sloupce — vzácné stavy jen přes menu).
@@ -46,8 +38,6 @@ type Props = {
   graceMap: Map<string, number>;
   activeTaskId: string | null;
   compact: boolean;
-  sortMode: TaskSortMode;
-  onSortModeChange: (mode: TaskSortMode) => void;
   onToggleCollapsed: (q: QuadrantKind) => void;
   onToggleKanban: (q: QuadrantKind) => void;
   onToggleTask: (task: Task) => void;
@@ -86,11 +76,7 @@ export function KanbanView(props: Props) {
   for (const t of props.tasks) byQuadrant[t.quadrant].push(t);
 
   const meta = QUADRANT_META[kanbanQuadrant];
-  const unsortedExpanded = byQuadrant[kanbanQuadrant];
-  const expandedTasks = useMemo(() => {
-    const compare = makeSortComparator(props.sortMode);
-    return compare ? [...unsortedExpanded].sort(compare) : unsortedExpanded;
-  }, [unsortedExpanded, props.sortMode]);
+  const expandedTasks = byQuadrant[kanbanQuadrant];
   const bottom = QUADRANTS.filter((q) => q !== kanbanQuadrant);
 
   const renderCard = (t: Task): ReactNode => {
@@ -130,19 +116,6 @@ export function KanbanView(props: Props) {
             <p>{meta.subtitle}</p>
           </div>
           <div className="em-quadrant-actions">
-            <select
-              className="dropdown em-kanban-sort"
-              value={props.sortMode}
-              onChange={(e) => props.onSortModeChange(e.currentTarget.value as TaskSortMode)}
-              aria-label="Sort cards"
-              title="Sort cards in each column"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  Sort: {o.label}
-                </option>
-              ))}
-            </select>
             <span className="em-quadrant-count">{expandedTasks.length}</span>
             <button
               type="button"

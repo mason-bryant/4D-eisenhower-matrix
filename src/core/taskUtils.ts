@@ -47,7 +47,7 @@ export function makeCompareTask(today: string): (a: Task, b: Task) => number {
   };
 }
 
-/** User-chosen order for Kanban columns; `default` keeps `makeCompareTask` (+ dependencies). */
+/** User-chosen card order for every list; `default` keeps `makeCompareTask` (+ dependencies). */
 export type TaskSortMode = 'default' | 'priority' | 'due' | 'alpha';
 export const TASK_SORT_MODES: TaskSortMode[] = ['default', 'priority', 'due', 'alpha'];
 
