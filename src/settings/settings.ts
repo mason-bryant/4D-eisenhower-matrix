@@ -1,10 +1,10 @@
 import type { Quadrant } from '../core/types.ts';
-import type { DueFilter } from '../core/taskUtils.ts';
 import {
   DEFAULT_QUADRANT_RULES,
   type QuadrantMode,
   type QuadrantRules,
 } from '../core/quadrantRules.ts';
+import type { DueFilter, TaskSortMode } from '../core/taskUtils.ts';
 
 /**
  * Plugin nastavení — persistovaná napříč restarty Obsidianu přes
@@ -70,6 +70,8 @@ export type PluginSettings = {
    * Done) a zbylé kvadranty jsou pod ním. `null` = normální 5-mřížka.
    */
   kanbanQuadrant: Quadrant | null;
+  /** Card order inside Kanban columns. */
+  kanbanSort: TaskSortMode;
   graphView: boolean;
   graphPositions: Record<string, { col: number; row: number }>;
   graphZoom: number;
@@ -103,6 +105,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   hideBlockedTasks: false,
   openSourceOnClick: true,
   kanbanQuadrant: null,
+  kanbanSort: 'default',
   graphView: false,
   graphPositions: {},
   graphZoom: 1,

@@ -47,6 +47,42 @@ export function makeCompareTask(today: string): (a: Task, b: Task) => number {
   };
 }
 
+/** User-chosen order for Kanban columns; `default` keeps `makeCompareTask` (+ dependencies). */
+export type TaskSortMode = 'default' | 'priority' | 'due' | 'alpha';
+export const TASK_SORT_MODES: TaskSortMode[] = ['default', 'priority', 'due', 'alpha'];
+
+// Obsidian Tasks scale: no priority sits between medium and low.
+const TASKS_PRIORITY_RANK: Record<Priority | 'none', number> = {
+  highest: 0, high: 1, medium: 2, none: 3, low: 4, lowest: 5,
+};
+
+const byPriority = (a: Task, b: Task) =>
+  TASKS_PRIORITY_RANK[a.priority ?? 'none'] - TASKS_PRIORITY_RANK[b.priority ?? 'none'];
+
+/** Earliest first; tasks without a due date last. */
+const byDue = (a: Task, b: Task) => {
+  if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+  if (a.dueDate) return -1;
+  if (b.dueDate) return 1;
+  return 0;
+};
+
+const byText = (a: Task, b: Task) => a.text.localeCompare(b.text, undefined, { sensitivity: 'base' });
+
+/** Comparator for a sort mode, or null for `default` (keep the incoming order). */
+export function makeSortComparator(mode: TaskSortMode): ((a: Task, b: Task) => number) | null {
+  switch (mode) {
+    case 'priority':
+      return (a, b) => byPriority(a, b) || byDue(a, b) || byText(a, b);
+    case 'due':
+      return (a, b) => byDue(a, b) || byPriority(a, b) || byText(a, b);
+    case 'alpha':
+      return (a, b) => byText(a, b) || byPriority(a, b) || byDue(a, b);
+    default:
+      return null;
+  }
+}
+
 /**
  * Doplní obousměrný index závislostí. První task s daným ID vyhrává,
  * aby duplicitní ID neměnilo význam podle pozdějšího pořadí průchodu.
