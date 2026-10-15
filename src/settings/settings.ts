@@ -56,6 +56,8 @@ export type PluginSettings = {
    * skryjí, editace zůstává plná. Přepíná se v hlavičce. Persistované.
    */
   compactMode: boolean;
+  /** Card order in every quadrant and Kanban column. */
+  taskSort: TaskSortMode;
   /** Zobrazí potvrzení před uzavřením blokovaného úkolu. */
   warnWhenCompletingBlockedTask: boolean;
   /** Řadí blokátory před úkoly, které na ně čekají. */
@@ -70,8 +72,6 @@ export type PluginSettings = {
    * Done) a zbylé kvadranty jsou pod ním. `null` = normální 5-mřížka.
    */
   kanbanQuadrant: Quadrant | null;
-  /** Card order inside Kanban columns. */
-  kanbanSort: TaskSortMode;
   graphView: boolean;
   graphPositions: Record<string, { col: number; row: number }>;
   graphZoom: number;
@@ -100,12 +100,12 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   dailySectionHeading: '# Today',
   headerCollapsed: false,
   compactMode: false,
+  taskSort: 'default',
   warnWhenCompletingBlockedTask: true,
   respectTaskDependenciesWhenSorting: true,
   hideBlockedTasks: false,
   openSourceOnClick: true,
   kanbanQuadrant: null,
-  kanbanSort: 'default',
   graphView: false,
   graphPositions: {},
   graphZoom: 1,

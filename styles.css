@@ -1741,8 +1741,8 @@ button.em-priority {
   text-decoration: underline;
 }
 
-/* === Kanban sort === */
-.em-kanban-sort {
+/* === Sort dropdown (header) === */
+.em-sort-select {
   font-size: var(--font-ui-smaller);
   height: auto;
   padding-top: 2px;

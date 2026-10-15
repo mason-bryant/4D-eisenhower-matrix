@@ -60,7 +60,7 @@ export default class EisenhowerMatrixPlugin extends Plugin {
     if (!Array.isArray(this.settings.propertyFilterValues)) this.settings.propertyFilterValues = [];
     if (this.settings.quadrantMode !== 'rules') this.settings.quadrantMode = 'tags';
     this.settings.quadrantRules = normalizeQuadrantRules(this.settings.quadrantRules);
-    if (!TASK_SORT_MODES.includes(this.settings.kanbanSort)) this.settings.kanbanSort = 'default';
+        if (!TASK_SORT_MODES.includes(this.settings.taskSort)) this.settings.taskSort = 'default';
     this.settings.graphPositions = validateGraphPositions(this.settings.graphPositions, (key) => console.warn(`[4D Matrix] Ignoring invalid graph position: ${key}`));
     const zoom = Number(this.settings.graphZoom);
     if (!Number.isFinite(zoom) || zoom < .25 || zoom > 2) console.warn('[4D Matrix] Clamping invalid graph zoom');
