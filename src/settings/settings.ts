@@ -1,5 +1,6 @@
 import type { Quadrant } from '../core/types.ts';
 import type { DueFilter } from '../core/taskUtils.ts';
+import type { PropertyFilter } from '../obsidian-adapter/properties.ts';
 
 /**
  * Plugin nastavení — persistovaná napříč restarty Obsidianu přes
@@ -17,13 +18,12 @@ export type PluginSettings = {
   lastOpenedDate: string | null;
   excludedFolders: string[];
   /**
-   * Frontmatter property filter (filter bar). Empty key = off. With a key,
-   * only tasks from notes whose property has one of `propertyFilterValues`
-   * (case-insensitive; any item for list properties) are shown; no values =
-   * the property just has to exist. Today's daily note always passes.
+   * Frontmatter property filters (filter bar), combined with AND. Each passes
+   * notes whose property has one of its values (case-insensitive; any item
+   * for list properties); no values = the property just has to exist.
+   * Today's daily note always passes.
    */
-  propertyFilterKey: string;
-  propertyFilterValues: string[];
+  propertyFilters: PropertyFilter[];
   /**
    * Override pro daily notes folder. Prázdný string = použij konfiguraci
    * z core pluginu „Daily notes". Cesta relativní k vault rootu.
@@ -77,8 +77,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   // Prázdné — uživatel si vyloučené složky nastaví sám (v Settings).
   // Generic plugin nemá hádat vault-specifické složky.
   excludedFolders: [],
-  propertyFilterKey: '',
-  propertyFilterValues: [],
+  propertyFilters: [],
   dailyFolderOverride: '',
   dailySectionHeading: '# Today',
   headerCollapsed: false,

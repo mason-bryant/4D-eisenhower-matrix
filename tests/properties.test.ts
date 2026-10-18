@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { App, TFile } from 'obsidian';
 import {
   collectProperties,
+  noteMatchesAllProperties,
   noteMatchesProperty,
+  normalizePropertyFilters,
   notePropertyValues,
   isExcludedPath,
   propertyValueStrings,
@@ -80,5 +82,41 @@ describe('notePropertyValues', () => {
     expect(notePropertyValues(app, 'a.md', 'context')).toEqual(['x', 'y']);
     expect(notePropertyValues(app, 'b.md', 'context')).toBeNull();
     expect(notePropertyValues(app, 'missing.md', 'context')).toBeNull();
+  });
+});
+
+describe('noteMatchesAllProperties', () => {
+  const app = fakeApp({
+    'both.md': { context: ['work'], project: 'alpha' },
+    'ctx.md': { context: 'work' },
+    'proj.md': { project: 'alpha' },
+  });
+  const filters = [
+    { key: 'context', values: ['work'] },
+    { key: 'project', values: ['alpha'] },
+  ];
+
+  it('requires every filter to match (AND)', () => {
+    expect(noteMatchesAllProperties(app, 'both.md', filters)).toBe(true);
+    expect(noteMatchesAllProperties(app, 'ctx.md', filters)).toBe(false);
+    expect(noteMatchesAllProperties(app, 'proj.md', filters)).toBe(false);
+  });
+
+  it('passes everything with no filters', () => {
+    expect(noteMatchesAllProperties(app, 'proj.md', [])).toBe(true);
+  });
+});
+
+describe('normalizePropertyFilters', () => {
+  it('drops malformed and keyless entries', () => {
+    expect(
+      normalizePropertyFilters([
+        { key: 'context', values: ['work', 3] },
+        { key: '', values: [] },
+        { key: 'x' },
+        null,
+      ]),
+    ).toEqual([{ key: 'context', values: ['work'] }]);
+    expect(normalizePropertyFilters('nope')).toEqual([]);
   });
 });

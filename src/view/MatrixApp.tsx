@@ -37,8 +37,13 @@ import { KanbanView } from '../components/KanbanView.tsx';
 import { GraphView } from '../components/GraphView.tsx';
 import { parseTaskLine } from '../core/parser.ts';
 import { FilterBar } from '../components/FilterBar.tsx';
-import { PropertyFilterBar } from '../components/PropertyFilterBar.tsx';
-import { collectProperties, noteMatchesProperty, notePropertyValues } from '../obsidian-adapter/properties.ts';
+import { PropertyFilterBar, type PropertyFilterRow } from '../components/PropertyFilterBar.tsx';
+import {
+  collectProperties,
+  noteMatchesAllProperties,
+  notePropertyValues,
+  type PropertyFilter,
+} from '../obsidian-adapter/properties.ts';
 import { DateNav } from '../components/DateNav.tsx';
 import { SearchBox } from '../components/SearchBox.tsx';
 import { Icon } from '../components/Icon.tsx';
@@ -166,9 +171,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   // Settings (persisted)
   const [selectedTags, setSelectedTags] = useState<string[]>(plugin.settings.selectedTags);
   const [dueFilter, setDueFilter] = useState<DueFilter>(plugin.settings.dueFilter);
-  const [propertyKey, setPropertyKey] = useState<string>(plugin.settings.propertyFilterKey);
-  const [propertyValues, setPropertyValues] = useState<string[]>(
-    plugin.settings.propertyFilterValues,
+  // Always at least one (possibly empty) row so the dropdown is there to pick from.
+  const [propertyFilters, setPropertyFilters] = useState<PropertyFilter[]>(() =>
+    plugin.settings.propertyFilters.length > 0
+      ? plugin.settings.propertyFilters
+      : [{ key: '', values: [] }],
   );
   const [collapsed, setCollapsed] = useState<Record<Quadrant, boolean>>(
     plugin.settings.collapsedQuadrants,
@@ -235,10 +242,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   }, [dueFilter, plugin]);
 
   useEffect(() => {
-    plugin.settings.propertyFilterKey = propertyKey;
-    plugin.settings.propertyFilterValues = propertyValues;
+    plugin.settings.propertyFilters = propertyFilters.filter((f) => f.key);
     void plugin.saveSettings();
-  }, [propertyKey, propertyValues, plugin]);
+  }, [propertyFilters, plugin]);
 
   useEffect(() => {
     plugin.settings.collapsedQuadrants = collapsed;
@@ -590,15 +596,20 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     return still && still.text === pinnedTask.text ? pinnedTask.key : null;
   }, [pinnedTask, tasks]);
 
-  /** Source files that pass the property filter (null = filter off). */
+  const activePropertyFilters = useMemo(
+    () => propertyFilters.filter((f) => f.key),
+    [propertyFilters],
+  );
+
+  /** Source files that pass every property filter (null = no filter active). */
   const propertyMatchedFiles = useMemo(() => {
-    if (!propertyKey) return null;
+    if (activePropertyFilters.length === 0) return null;
     const files = new Set<string>();
     for (const path of new Set(tasks.map((t) => t.sourceFile))) {
-      if (noteMatchesProperty(app, path, propertyKey, propertyValues)) files.add(path);
+      if (noteMatchesAllProperties(app, path, activePropertyFilters)) files.add(path);
     }
     return files;
-  }, [app, tasks, propertyKey, propertyValues]);
+  }, [app, tasks, activePropertyFilters]);
 
   const passesFilters = useCallback(
     (t: Task): boolean => {
@@ -746,7 +757,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   // takže od té chvíle má rozhodovat filtr, ne starý nález.
   useEffect(() => {
     setPinnedTask(null);
-  }, [date, selectedTags, dueFilter, showCompleted, propertyKey, propertyValues]);
+  }, [date, selectedTags, dueFilter, showCompleted, propertyFilters]);
 
   const availableTags = useMemo(
     () =>
@@ -765,45 +776,69 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [app, plugin, tasks],
   );
 
-  /** Values of the selected property, counted by open tasks in those notes. */
-  const propertyValueCounts = useMemo(() => {
-    if (!propertyKey) return [];
-    const counts = new Map<string, { value: string; count: number }>();
-    for (const t of tasks) {
-      if (t.isFromDnes) continue;
-      if (!showCompleted && isClosedStatus(t.status)) continue;
-      for (const value of notePropertyValues(app, t.sourceFile, propertyKey) ?? []) {
-        const k = value.toLowerCase();
-        const entry = counts.get(k) ?? { value, count: 0 };
-        entry.count++;
-        counts.set(k, entry);
+  /**
+   * Per row: values of its property, counted by open tasks in notes that pass
+   * the *other* rows — so the counts show what selecting a chip would leave.
+   */
+  const propertyRows = useMemo((): PropertyFilterRow[] => {
+    const openTasks = tasks.filter(
+      (t) => !t.isFromDnes && (showCompleted || !isClosedStatus(t.status)),
+    );
+    return propertyFilters.map((row, i) => {
+      if (!row.key) return { key: '', values: [], selectedValues: [] };
+      const others = propertyFilters.filter((f, j) => j !== i && f.key);
+      const counts = new Map<string, { value: string; count: number }>();
+      for (const t of openTasks) {
+        if (!noteMatchesAllProperties(app, t.sourceFile, others)) continue;
+        for (const value of notePropertyValues(app, t.sourceFile, row.key) ?? []) {
+          const k = value.toLowerCase();
+          const entry = counts.get(k) ?? { value, count: 0 };
+          entry.count++;
+          counts.set(k, entry);
+        }
       }
-    }
-    // Keep selected values visible even when no task uses them right now.
-    for (const value of propertyValues) {
-      if (!counts.has(value.toLowerCase())) counts.set(value.toLowerCase(), { value, count: 0 });
-    }
-    return [...counts.values()].sort(
-      (a, b) => b.count - a.count || a.value.localeCompare(b.value),
-    );
-  }, [app, tasks, propertyKey, propertyValues, showCompleted]);
+      // Keep selected values visible even when no task uses them right now.
+      for (const value of row.values) {
+        if (!counts.has(value.toLowerCase())) counts.set(value.toLowerCase(), { value, count: 0 });
+      }
+      const values = [...counts.values()].sort(
+        (a, b) => b.count - a.count || a.value.localeCompare(b.value),
+      );
+      return { key: row.key, values, selectedValues: row.values };
+    });
+  }, [app, tasks, propertyFilters, showCompleted]);
 
-  const selectPropertyKey = useCallback((key: string) => {
-    setPropertyKey(key);
-    setPropertyValues([]);
+  const selectPropertyKey = useCallback((row: number, key: string) => {
+    setPropertyFilters((prev) => prev.map((f, i) => (i === row ? { key, values: [] } : f)));
   }, []);
 
-  const togglePropertyValue = useCallback((value: string) => {
-    setPropertyValues((prev) =>
-      prev.some((v) => v.toLowerCase() === value.toLowerCase())
-        ? prev.filter((v) => v.toLowerCase() !== value.toLowerCase())
-        : [...prev, value],
+  const togglePropertyValue = useCallback((row: number, value: string) => {
+    const lower = value.toLowerCase();
+    setPropertyFilters((prev) =>
+      prev.map((f, i) => {
+        if (i !== row) return f;
+        const has = f.values.some((v) => v.toLowerCase() === lower);
+        return {
+          ...f,
+          values: has ? f.values.filter((v) => v.toLowerCase() !== lower) : [...f.values, value],
+        };
+      }),
     );
   }, []);
 
-  const clearPropertyFilter = useCallback(() => {
-    setPropertyKey('');
-    setPropertyValues([]);
+  const removePropertyRow = useCallback((row: number) => {
+    setPropertyFilters((prev) => {
+      const next = prev.filter((_, i) => i !== row);
+      return next.length > 0 ? next : [{ key: '', values: [] }];
+    });
+  }, []);
+
+  const addPropertyRow = useCallback(() => {
+    setPropertyFilters((prev) => [...prev, { key: '', values: [] }]);
+  }, []);
+
+  const clearPropertyFilters = useCallback(() => {
+    setPropertyFilters([{ key: '', values: [] }]);
   }, []);
 
   // Live ref na seznam tagů pro autocomplete v add/edit formech.
@@ -1145,12 +1180,12 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
         <PropertyFilterBar
           propertyKeys={propertyKeys}
-          selectedKey={propertyKey}
-          values={propertyValueCounts}
-          selectedValues={propertyValues}
+          rows={propertyRows}
           onSelectKey={selectPropertyKey}
           onToggleValue={togglePropertyValue}
-          onClear={clearPropertyFilter}
+          onRemoveRow={removePropertyRow}
+          onAddRow={addPropertyRow}
+          onClear={clearPropertyFilters}
         />
         </div>
         )}
