@@ -56,3 +56,20 @@ export function noteMatchesProperty(app: App, path: string, key: string, values:
   const wanted = new Set(values.map((v) => v.toLowerCase()));
   return actual.some((v) => wanted.has(v.toLowerCase()));
 }
+
+/** One property filter row: a key and the accepted values (OR). Empty key = inactive. */
+export type PropertyFilter = { key: string; values: string[] };
+
+/** True when the note passes every active filter (AND across filters). */
+export function noteMatchesAllProperties(app: App, path: string, filters: PropertyFilter[]): boolean {
+  return filters.every((f) => noteMatchesProperty(app, path, f.key, f.values));
+}
+
+/** Drops malformed entries from persisted settings. */
+export function normalizePropertyFilters(raw: unknown): PropertyFilter[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((f): f is PropertyFilter => !!f && typeof f.key === 'string' && Array.isArray(f.values))
+    .map((f) => ({ key: f.key, values: f.values.filter((v): v is string => typeof v === 'string') }))
+    .filter((f) => f.key !== '');
+}

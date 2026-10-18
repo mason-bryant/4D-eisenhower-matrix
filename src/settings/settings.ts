@@ -5,6 +5,7 @@ import {
   type QuadrantRules,
 } from '../core/quadrantRules.ts';
 import type { DueFilter, TaskSortMode } from '../core/taskUtils.ts';
+import type { PropertyFilter } from '../obsidian-adapter/properties.ts';
 
 /**
  * Plugin nastavení — persistovaná napříč restarty Obsidianu přes
@@ -22,13 +23,12 @@ export type PluginSettings = {
   lastOpenedDate: string | null;
   excludedFolders: string[];
   /**
-   * Frontmatter property filter (filter bar). Empty key = off. With a key,
-   * only tasks from notes whose property has one of `propertyFilterValues`
-   * (case-insensitive; any item for list properties) are shown; no values =
-   * the property just has to exist. Today's daily note always passes.
+   * Frontmatter property filters (filter bar), combined with AND. Each passes
+   * notes whose property has one of its values (case-insensitive; any item
+   * for list properties); no values = the property just has to exist.
+   * Today's daily note always passes.
    */
-  propertyFilterKey: string;
-  propertyFilterValues: string[];
+  propertyFilters: PropertyFilter[];
   /**
    * `tags` = quadrant from the leading tag only (default). `rules` = the tag
    * still wins; untagged tasks go to the first matching rule.
@@ -92,8 +92,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   // Prázdné — uživatel si vyloučené složky nastaví sám (v Settings).
   // Generic plugin nemá hádat vault-specifické složky.
   excludedFolders: [],
-  propertyFilterKey: '',
-  propertyFilterValues: [],
+  propertyFilters: [],
   quadrantMode: 'tags',
   quadrantRules: DEFAULT_QUADRANT_RULES,
   dailyFolderOverride: '',
