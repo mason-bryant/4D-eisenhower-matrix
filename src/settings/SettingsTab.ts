@@ -33,6 +33,9 @@ const RESPECT_DEPENDENCIES_NAME = 'Respect task dependencies when sorting';
 const RESPECT_DEPENDENCIES_DESC = 'Place blocking tasks before the tasks that depend on them.';
 const HIDE_BLOCKED_NAME = 'Hide blocked tasks';
 const HIDE_BLOCKED_DESC = 'Hide tasks that have at least one unfinished dependency.';
+const STYLE_IN_PROGRESS_NAME = 'Show in-progress checkboxes as 🔄';
+const STYLE_IN_PROGRESS_DESC =
+  'Draw `- [/]` tasks across Obsidian (notes, Live Preview, Tasks queries) as a purple 🔄 without strikethrough, instead of a ticked box. Turn off if your theme already styles alternate checkboxes.';
 
 const RESET_NAME = 'Reset to defaults';
 const RESET_DESC =
@@ -93,6 +96,11 @@ export class MatrixSettingsTab extends PluginSettingTab {
         name: HIDE_BLOCKED_NAME,
         desc: HIDE_BLOCKED_DESC,
         control: { type: 'toggle', key: 'hideBlockedTasks' },
+      },
+      {
+        name: STYLE_IN_PROGRESS_NAME,
+        desc: STYLE_IN_PROGRESS_DESC,
+        control: { type: 'toggle', key: 'styleInProgressCheckboxes' },
       },
       {
         type: 'list',
@@ -165,6 +173,8 @@ export class MatrixSettingsTab extends PluginSettingTab {
         return this.plugin.settings.respectTaskDependenciesWhenSorting;
       case 'hideBlockedTasks':
         return this.plugin.settings.hideBlockedTasks;
+      case 'styleInProgressCheckboxes':
+        return this.plugin.settings.styleInProgressCheckboxes;
       default:
         return undefined;
     }
@@ -189,6 +199,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       case 'warnWhenCompletingBlockedTask':
       case 'respectTaskDependenciesWhenSorting':
       case 'hideBlockedTasks':
+      case 'styleInProgressCheckboxes':
         if (typeof value !== 'boolean') return;
         await this.setBooleanSetting(key, value);
         break;
@@ -222,6 +233,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
         warnWhenCompletingBlockedTask: this.plugin.settings.warnWhenCompletingBlockedTask,
         respectTaskDependenciesWhenSorting: this.plugin.settings.respectTaskDependenciesWhenSorting,
         hideBlockedTasks: this.plugin.settings.hideBlockedTasks,
+        styleInProgressCheckboxes: this.plugin.settings.styleInProgressCheckboxes,
         graphPositions: this.plugin.settings.graphPositions,
       };
       try {
@@ -268,7 +280,11 @@ export class MatrixSettingsTab extends PluginSettingTab {
   }
 
   private async setBooleanSetting(
-    key: 'warnWhenCompletingBlockedTask' | 'respectTaskDependenciesWhenSorting' | 'hideBlockedTasks',
+    key:
+      | 'warnWhenCompletingBlockedTask'
+      | 'respectTaskDependenciesWhenSorting'
+      | 'hideBlockedTasks'
+      | 'styleInProgressCheckboxes',
     value: boolean,
   ): Promise<void> {
     await this.mutate(() => {
@@ -318,6 +334,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       this.plugin.settings.warnWhenCompletingBlockedTask = DEFAULT_SETTINGS.warnWhenCompletingBlockedTask;
       this.plugin.settings.respectTaskDependenciesWhenSorting = DEFAULT_SETTINGS.respectTaskDependenciesWhenSorting;
       this.plugin.settings.hideBlockedTasks = DEFAULT_SETTINGS.hideBlockedTasks;
+      this.plugin.settings.styleInProgressCheckboxes = DEFAULT_SETTINGS.styleInProgressCheckboxes;
     });
   }
 
@@ -399,6 +416,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       [WARN_BLOCKED_NAME, WARN_BLOCKED_DESC, 'warnWhenCompletingBlockedTask'],
       [RESPECT_DEPENDENCIES_NAME, RESPECT_DEPENDENCIES_DESC, 'respectTaskDependenciesWhenSorting'],
       [HIDE_BLOCKED_NAME, HIDE_BLOCKED_DESC, 'hideBlockedTasks'],
+      [STYLE_IN_PROGRESS_NAME, STYLE_IN_PROGRESS_DESC, 'styleInProgressCheckboxes'],
     ] as const;
 
     for (const [name, desc, key] of toggles) {
