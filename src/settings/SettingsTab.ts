@@ -61,9 +61,9 @@ const HIDE_BLOCKED_DESC = 'Hide tasks that have at least one unfinished dependen
 const OPEN_SOURCE_NAME = 'Open note from task card';
 const OPEN_SOURCE_DESC =
   "Click the 📁 note name on a task card to open that note — or switch to it if it's already open. Off = the note name isn't clickable.";
-const STYLE_IN_PROGRESS_NAME = 'Show in-progress checkboxes as 🔄';
+const STYLE_IN_PROGRESS_NAME = 'Show in-progress checkboxes as half-filled';
 const STYLE_IN_PROGRESS_DESC =
-  'Draw `- [/]` tasks across Obsidian (notes, Live Preview, Tasks queries) as a purple 🔄 without strikethrough, instead of a ticked box. Turn off if your theme already styles alternate checkboxes.';
+  'Draw `- [/]` tasks across Obsidian (notes, Live Preview, Tasks queries) as a purple box filled on one side of a diagonal, without strikethrough, instead of a ticked box. Turn off if your theme already styles alternate checkboxes.';
 
 const RESET_NAME = 'Reset to defaults';
 const RESET_DESC =
