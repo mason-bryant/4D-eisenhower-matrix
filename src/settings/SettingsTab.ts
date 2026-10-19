@@ -33,9 +33,9 @@ const RESPECT_DEPENDENCIES_NAME = 'Respect task dependencies when sorting';
 const RESPECT_DEPENDENCIES_DESC = 'Place blocking tasks before the tasks that depend on them.';
 const HIDE_BLOCKED_NAME = 'Hide blocked tasks';
 const HIDE_BLOCKED_DESC = 'Hide tasks that have at least one unfinished dependency.';
-const STYLE_IN_PROGRESS_NAME = 'Show in-progress checkboxes as 🔄';
+const STYLE_IN_PROGRESS_NAME = 'Show in-progress checkboxes as half-filled';
 const STYLE_IN_PROGRESS_DESC =
-  'Draw `- [/]` tasks across Obsidian (notes, Live Preview, Tasks queries) as a purple 🔄 without strikethrough, instead of a ticked box. Turn off if your theme already styles alternate checkboxes.';
+  'Draw `- [/]` tasks across Obsidian (notes, Live Preview, Tasks queries) as a purple box filled on one side of a diagonal, without strikethrough, instead of a ticked box. Turn off if your theme already styles alternate checkboxes.';
 
 const RESET_NAME = 'Reset to defaults';
 const RESET_DESC =

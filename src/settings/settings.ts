@@ -43,7 +43,7 @@ export type PluginSettings = {
   respectTaskDependenciesWhenSorting: boolean;
   /** Skryje úkoly, které čekají na alespoň jeden otevřený blokátor. */
   hideBlockedTasks: boolean;
-  /** Draw `[/]` checkboxes everywhere in Obsidian as a purple 🔄 (adds a body class). */
+  /** Draw `[/]` checkboxes everywhere in Obsidian as a diagonally half-filled purple box (adds a body class). */
   styleInProgressCheckboxes: boolean;
   /**
    * Kanban režim (desktop i mobil/tablet): pokud je nastaven kvadrant, ten se rozbalí

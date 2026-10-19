@@ -136,7 +136,7 @@ The parser recognises a named list of Tasks fields (`⏳`, `➕`, `🔁`, `🏁`
 - **Respect task dependencies when sorting** — places prerequisites first within each quadrant. Default: on.
 - **Hide blocked tasks** — removes currently blocked tasks from the matrix. If a blocker is itself blocked, both cards can be hidden, so the matrix will not show what the chain is waiting for. Default: off.
 
-- **Show in-progress checkboxes as 🔄** — draws `- [/]` tasks everywhere in Obsidian (notes, Live Preview, Tasks queries) as a purple 🔄 without strikethrough, instead of the default ticked box. Turn it off if your theme already styles alternate checkboxes. Default: off.
+- **Show in-progress checkboxes as half-filled** — draws `- [/]` tasks everywhere in Obsidian (notes, Live Preview, Tasks queries) as a purple box filled on one side of a diagonal, without strikethrough, instead of the default ticked box. Turn it off if your theme already styles alternate checkboxes. Default: off.
 
 On Obsidian 1.13 and later the settings also show up in the search box at the top of the Settings window.
 
