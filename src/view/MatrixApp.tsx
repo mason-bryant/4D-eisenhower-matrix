@@ -53,6 +53,7 @@ import { Icon } from '../components/Icon.tsx';
 import {
   DependencyNavigationContext,
   SourceNavigationContext,
+  PrioritySetterContext,
   SearchHighlightContext,
   TaskEditingContext,
   TaskCardOverlay,
@@ -467,6 +468,18 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       } catch (e) {
         showError(`Save failed: ${String((e as Error).message ?? e)}`);
         throw e;
+      }
+    },
+    [repo],
+  );
+
+  // Priority-only edit: keeps text, tags, due date and dependencies as they are.
+  const handleSetPriority = useCallback(
+    async (task: Task, priority: Priority | null) => {
+      try {
+        await repo.updateTask(task, task.text, task.contextTags, { priority });
+      } catch (e) {
+        showError(`Setting priority failed: ${String((e as Error).message ?? e)}`);
       }
     },
     [repo],
@@ -1254,6 +1267,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         <SourceNavigationContext.Provider
           value={plugin.settings.openSourceOnClick ? handleNavigateToSource : null}
         >
+        <PrioritySetterContext.Provider value={handleSetPriority}>
         <SearchHighlightContext.Provider value={searchHighlight}>
         <div className="em-app-body">
         {graphView ? (
@@ -1342,6 +1356,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         )}
         </div>
         </SearchHighlightContext.Provider>
+        </PrioritySetterContext.Provider>
         </SourceNavigationContext.Provider>
         </DependencyNavigationContext.Provider>
         </TaskEditingContext.Provider>

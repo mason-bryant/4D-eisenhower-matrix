@@ -3,6 +3,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { Menu, Platform, setIcon, type App, type PaneType } from 'obsidian';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
 import {
+  PRIORITIES,
   PRIORITY_META,
   QUADRANTS,
   QUADRANT_META,
@@ -20,6 +21,11 @@ export const GRACE_MS = 3000;
 
 /** Click on the 📁 source line: open/focus the note. Null = navigation disabled. */
 export const SourceNavigationContext = createContext<((task: Task) => void) | null>(null);
+
+/** Sets a task's priority from the card menu (null = none). Null context = no menu entries. */
+export const PrioritySetterContext = createContext<
+  ((task: Task, priority: Priority | null) => Promise<void>) | null
+>(null);
 
 export const DependencyNavigationContext = createContext<
   ((task: Task, event?: React.MouseEvent) => void) | null
@@ -120,6 +126,7 @@ export function TaskCard({
 }: Props) {
   const navigateToDependency = useContext(DependencyNavigationContext);
   const navigateToSource = useContext(SourceNavigationContext);
+  const setTaskPriority = useContext(PrioritySetterContext);
   const overdue = isOverdue(task, today);
   const [editing, setEditing] = useState(false);
   const [linkedKind, setLinkedKind] = useState<LinkedTaskKind | null>(null);
@@ -212,6 +219,21 @@ export function TaskCard({
             if (!isCurrent) void onSetStatus(s.char);
           }),
       );
+    }
+    if (setTaskPriority) {
+      menu.addSeparator();
+      const levels: (Priority | null)[] = [...PRIORITIES.slice(0, 3), null, ...PRIORITIES.slice(3)];
+      for (const p of levels) {
+        const isCurrent = (task.priority ?? null) === p;
+        menu.addItem((item) =>
+          item
+            .setTitle(p ? `Priority: ${PRIORITY_META[p].emoji} ${PRIORITY_META[p].label}` : 'Priority: Normal (none)')
+            .setChecked(isCurrent)
+            .onClick(() => {
+              if (!isCurrent) void setTaskPriority(task, p);
+            }),
+        );
+      }
     }
     if (onAddLinked) {
       menu.addSeparator();
