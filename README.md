@@ -103,6 +103,7 @@ Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+
 | Show completed tasks | The "Done" toggle in the header |
 | Compact view | The "Compact" toggle in the header — 2-line cards |
 | Set task status | Right-click the card (or the status box) → *Mark as…* |
+| Set priority | Right-click the card → *Priority: …* (🔺 Highest … ⏬ Lowest, or Normal = none) |
 | Kanban view | Click the kanban icon in a quadrant header → status columns; click it again to return to the grid. On mobile/tablet the columns scroll horizontally; change a card's status via its menu (*Mark as…*) |
 
 ### In-quadrant order

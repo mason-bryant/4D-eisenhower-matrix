@@ -13,6 +13,7 @@ import {
   updateLineTextAndTags,
 } from '../src/core/lineOps.ts';
 import { parseTaskLine } from '../src/core/parser.ts';
+import type { Priority } from '../src/core/types.ts';
 
 describe('toggleLine', () => {
   it('unchecked → checked + ✅ today', () => {
@@ -425,5 +426,31 @@ describe('transformLineInContent', () => {
     const content = 'a\nb\r\nc\n- [ ] task\r\n';
     expect(transformLineInContent(content, 3, (line) => `${line} 🆔 x`))
       .toBe('a\nb\r\nc\n- [ ] task 🆔 x\r\n');
+  });
+});
+
+describe('priority-only update (card menu)', () => {
+  const setPriority = (line: string, priority: Priority | null) => {
+    const t = parseTaskLine(line, 0)!;
+    return updateLineTextAndTags(line, t.text, t.contextTags, { priority }).newLine;
+  };
+
+  it('replaces the priority and keeps everything else', () => {
+    const line = '- [/] #DO #ops 🔼 📅 2026-10-20 Rotate keys 🆔 abc ⛔ xyz';
+    const out = setPriority(line, 'high');
+    const before = parseTaskLine(line, 0)!;
+    const after = parseTaskLine(out, 0)!;
+    expect(after.priority).toBe('high');
+    expect(after.status).toBe('/');
+    expect(after.quadrant).toBe('DO');
+    expect(after.contextTags).toEqual(before.contextTags);
+    expect(after.text).toBe(before.text);
+    expect(after.dueDate).toBe('2026-10-20');
+    expect(after.id).toBe('abc');
+    expect(after.blockedBy).toEqual(['xyz']);
+  });
+
+  it('removes the priority with null', () => {
+    expect(parseTaskLine(setPriority('- [ ] ⏫ Ship it', null), 0)!.priority).toBeUndefined();
   });
 });

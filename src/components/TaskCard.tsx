@@ -3,6 +3,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { Menu, Platform, setIcon, type App, type PaneType } from 'obsidian';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
 import {
+  PRIORITIES,
   PRIORITY_META,
   QUADRANTS,
   QUADRANT_META,
@@ -17,6 +18,11 @@ import { AddTaskInput } from './AddTaskInput.tsx';
 import { renderInlineMarkdown, type InlineLinkHandler } from './inlineMarkdown.tsx';
 
 export const GRACE_MS = 3000;
+
+/** Sets a task's priority from the card menu (null = none). Null context = no menu entries. */
+export const PrioritySetterContext = createContext<
+  ((task: Task, priority: Priority | null) => Promise<void>) | null
+>(null);
 
 export const DependencyNavigationContext = createContext<
   ((task: Task, event?: React.MouseEvent) => void) | null
@@ -116,6 +122,7 @@ export function TaskCard({
   onMouseLeave,
 }: Props) {
   const navigateToDependency = useContext(DependencyNavigationContext);
+  const setTaskPriority = useContext(PrioritySetterContext);
   const overdue = isOverdue(task, today);
   const [editing, setEditing] = useState(false);
   const [linkedKind, setLinkedKind] = useState<LinkedTaskKind | null>(null);
@@ -208,6 +215,21 @@ export function TaskCard({
             if (!isCurrent) void onSetStatus(s.char);
           }),
       );
+    }
+    if (setTaskPriority) {
+      menu.addSeparator();
+      const levels: (Priority | null)[] = [...PRIORITIES.slice(0, 3), null, ...PRIORITIES.slice(3)];
+      for (const p of levels) {
+        const isCurrent = (task.priority ?? null) === p;
+        menu.addItem((item) =>
+          item
+            .setTitle(p ? `Priority: ${PRIORITY_META[p].emoji} ${PRIORITY_META[p].label}` : 'Priority: Normal (none)')
+            .setChecked(isCurrent)
+            .onClick(() => {
+              if (!isCurrent) void setTaskPriority(task, p);
+            }),
+        );
+      }
     }
     if (onAddLinked) {
       menu.addSeparator();
