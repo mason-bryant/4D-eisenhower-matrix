@@ -61,6 +61,9 @@ const HIDE_BLOCKED_DESC = 'Hide tasks that have at least one unfinished dependen
 const OPEN_SOURCE_NAME = 'Open note from task card';
 const OPEN_SOURCE_DESC =
   "Click the 📁 note name on a task card to open that note — or switch to it if it's already open. Off = the note name isn't clickable.";
+const STYLE_IN_PROGRESS_NAME = 'Show in-progress checkboxes as 🔄';
+const STYLE_IN_PROGRESS_DESC =
+  'Draw `- [/]` tasks across Obsidian (notes, Live Preview, Tasks queries) as a purple 🔄 without strikethrough, instead of a ticked box. Turn off if your theme already styles alternate checkboxes.';
 
 const RESET_NAME = 'Reset to defaults';
 const RESET_DESC =
@@ -126,6 +129,11 @@ export class MatrixSettingsTab extends PluginSettingTab {
         name: OPEN_SOURCE_NAME,
         desc: OPEN_SOURCE_DESC,
         control: { type: 'toggle', key: 'openSourceOnClick' },
+      },
+      {
+        name: STYLE_IN_PROGRESS_NAME,
+        desc: STYLE_IN_PROGRESS_DESC,
+        control: { type: 'toggle', key: 'styleInProgressCheckboxes' },
       },
       {
         type: 'list',
@@ -332,6 +340,8 @@ export class MatrixSettingsTab extends PluginSettingTab {
         return this.plugin.settings.hideBlockedTasks;
       case 'openSourceOnClick':
         return this.plugin.settings.openSourceOnClick;
+      case 'styleInProgressCheckboxes':
+        return this.plugin.settings.styleInProgressCheckboxes;
       default:
         return undefined;
     }
@@ -362,6 +372,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       case 'respectTaskDependenciesWhenSorting':
       case 'hideBlockedTasks':
       case 'openSourceOnClick':
+      case 'styleInProgressCheckboxes':
         if (typeof value !== 'boolean') return;
         await this.setBooleanSetting(key, value);
         break;
@@ -398,6 +409,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
         respectTaskDependenciesWhenSorting: this.plugin.settings.respectTaskDependenciesWhenSorting,
         hideBlockedTasks: this.plugin.settings.hideBlockedTasks,
         openSourceOnClick: this.plugin.settings.openSourceOnClick,
+        styleInProgressCheckboxes: this.plugin.settings.styleInProgressCheckboxes,
         graphPositions: this.plugin.settings.graphPositions,
       };
       try {
@@ -448,7 +460,8 @@ export class MatrixSettingsTab extends PluginSettingTab {
       | 'warnWhenCompletingBlockedTask'
       | 'respectTaskDependenciesWhenSorting'
       | 'hideBlockedTasks'
-      | 'openSourceOnClick',
+      | 'openSourceOnClick'
+      | 'styleInProgressCheckboxes',
     value: boolean,
   ): Promise<void> {
     await this.mutate(() => {
@@ -499,6 +512,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       this.plugin.settings.respectTaskDependenciesWhenSorting = DEFAULT_SETTINGS.respectTaskDependenciesWhenSorting;
       this.plugin.settings.hideBlockedTasks = DEFAULT_SETTINGS.hideBlockedTasks;
       this.plugin.settings.openSourceOnClick = DEFAULT_SETTINGS.openSourceOnClick;
+      this.plugin.settings.styleInProgressCheckboxes = DEFAULT_SETTINGS.styleInProgressCheckboxes;
     });
   }
 
@@ -614,6 +628,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       [RESPECT_DEPENDENCIES_NAME, RESPECT_DEPENDENCIES_DESC, 'respectTaskDependenciesWhenSorting'],
       [HIDE_BLOCKED_NAME, HIDE_BLOCKED_DESC, 'hideBlockedTasks'],
       [OPEN_SOURCE_NAME, OPEN_SOURCE_DESC, 'openSourceOnClick'],
+      [STYLE_IN_PROGRESS_NAME, STYLE_IN_PROGRESS_DESC, 'styleInProgressCheckboxes'],
     ] as const;
 
     for (const [name, desc, key] of toggles) {

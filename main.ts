@@ -12,6 +12,8 @@ import { normalizePropertyFilters } from './src/obsidian-adapter/properties.ts';
 // addIcon očekává obsah SVG s viewBoxem 0 0 100 100.
 const SQUARE_HALF_ICON = `<rect x="14" y="14" width="72" height="72" rx="12" fill="none" stroke="currentColor" stroke-width="8"/><path d="M50 18 L24 18 A6 6 0 0 0 18 24 L18 76 A6 6 0 0 0 24 82 L50 82 Z" fill="currentColor"/>`;
 
+const IN_PROGRESS_CHECKBOX_CLASS = 'em-style-in-progress';
+
 export default class EisenhowerMatrixPlugin extends Plugin {
   settings: PluginSettings = DEFAULT_SETTINGS;
 
@@ -41,10 +43,19 @@ export default class EisenhowerMatrixPlugin extends Plugin {
     });
 
     this.addSettingTab(new MatrixSettingsTab(this.app, this));
+
+    this.applyBodyClasses();
+    this.registerRepoConfigCallback(() => this.applyBodyClasses());
   }
 
   onunload(): void {
     // Obsidian uvolní view / ribbon / command / settings tab automaticky.
+    document.body.removeClass(IN_PROGRESS_CHECKBOX_CLASS);
+  }
+
+  /** Global styling opt-ins live on <body> so they reach notes, not just the view. */
+  private applyBodyClasses(): void {
+    document.body.toggleClass(IN_PROGRESS_CHECKBOX_CLASS, this.settings.styleInProgressCheckboxes);
   }
 
   async loadSettings(): Promise<void> {

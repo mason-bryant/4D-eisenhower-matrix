@@ -66,6 +66,8 @@ export type PluginSettings = {
   hideBlockedTasks: boolean;
   /** Clicking a card's 📁 source line opens (or focuses) that note. */
   openSourceOnClick: boolean;
+  /** Draw `[/]` checkboxes everywhere in Obsidian as a purple 🔄 (adds a body class). */
+  styleInProgressCheckboxes: boolean;
   /**
    * Kanban režim (desktop i mobil/tablet): pokud je nastaven kvadrant, ten se rozbalí
    * na celou šířku se 4 status-sloupci (To-do / In progress / Scheduled /
@@ -104,6 +106,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   respectTaskDependenciesWhenSorting: true,
   hideBlockedTasks: false,
   openSourceOnClick: true,
+  styleInProgressCheckboxes: false,
   kanbanQuadrant: null,
   graphView: false,
   graphPositions: {},
